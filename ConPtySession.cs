@@ -20,6 +20,20 @@ public sealed class ConPtySession : IDisposable
 
 {
 
+    static ConPtySession()
+    {
+        NativeLibrary.SetDllImportResolver(typeof(ConPtySession).Assembly, (name, assembly, searchPath) =>
+        {
+            if (name != "conpty.dll") return IntPtr.Zero;
+            var architecture = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
+            var directory = Path.Combine(AppContext.BaseDirectory, "ConPty", architecture);
+            if (!File.Exists(Path.Combine(directory, "OpenConsole.exe")))
+                throw new DllNotFoundException("The bundled ConPTY host is missing. Reinstall Rtl Terminal.");
+            return NativeLibrary.Load(Path.Combine(directory, "conpty.dll"));
+        });
+    }
+
+    private const uint PSEUDOCONSOLE_GLYPH_WIDTH_GRAPHEMES = 0x08;
     private const uint EXTENDED_STARTUPINFO_PRESENT = 0x00080000;
 
 private const int PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = 0x00020016;
@@ -62,7 +76,7 @@ private const int PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = 0x00020016;
 
 
 
-        var hr = CreatePseudoConsole(new COORD(columns, rows), inputReadSide, outputWriteSide, 0, out _pseudoConsole);
+        var hr = CreatePseudoConsole(new COORD(columns, rows), inputReadSide, outputWriteSide, PSEUDOCONSOLE_GLYPH_WIDTH_GRAPHEMES, out _pseudoConsole);
 
 
 
@@ -299,19 +313,21 @@ private const int PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = 0x00020016;
 
 
 
-    [DllImport("kernel32.dll", SetLastError = true)]
+    // Use the bundled host with grapheme widths: legacy conhost counts Persian
+    // combining marks and ZWNJ as columns and corrupts TUI cursor-based redraws.
+    [DllImport("conpty.dll", EntryPoint = "ConptyCreatePseudoConsole", SetLastError = true)]
 
     private static extern int CreatePseudoConsole(COORD size, IntPtr hInput, IntPtr hOutput, uint dwFlags, out IntPtr phPC);
 
 
 
-    [DllImport("kernel32.dll", SetLastError = true)]
+    [DllImport("conpty.dll", EntryPoint = "ConptyResizePseudoConsole", SetLastError = true)]
 
     private static extern int ResizePseudoConsole(IntPtr hPC, COORD size);
 
 
 
-    [DllImport("kernel32.dll", SetLastError = true)]
+    [DllImport("conpty.dll", EntryPoint = "ConptyClosePseudoConsole", SetLastError = true)]
 
     private static extern void ClosePseudoConsole(IntPtr hPC);
 

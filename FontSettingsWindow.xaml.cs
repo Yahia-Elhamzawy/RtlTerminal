@@ -38,7 +38,8 @@ public partial class FontSettingsWindow : Window
         double size,
         FontWeight weight,
         FontStyle style,
-        int historySize)
+        int historySize,
+        HtmlPreviewScope previewScope = HtmlPreviewScope.CurrentPage)
     {
         InitializeComponent();
         _fontFamilies = Fonts.SystemFontFamilies
@@ -62,10 +63,12 @@ public partial class FontSettingsWindow : Window
             10000 => 2,
             _ => 0
         };
+        PreviewScopeComboBox.SelectedIndex = (int)previewScope;
         RefreshFontList();
     }
 
     public TerminalFontSettings SelectedSettings { get; private set; }
+    public HtmlPreviewScope SelectedPreviewScope { get; private set; }
     public int SelectedHistorySize { get; private set; } = 2000;
 
     private void FontSearchTextBox_TextChanged(
@@ -173,6 +176,7 @@ public partial class FontSettingsWindow : Window
             BoldCheckBox.IsChecked == true,
             ItalicCheckBox.IsChecked == true);
         SelectedHistorySize = GetHistorySize();
+        SelectedPreviewScope = (HtmlPreviewScope)Math.Max(0, PreviewScopeComboBox.SelectedIndex);
         DialogResult = true;
     }
 

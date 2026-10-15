@@ -42,6 +42,7 @@ public partial class MainWindow : Window
     private bool _renderedSmartRtlEnabled = true;
     private TerminalProfile _defaultProfile = TerminalProfile.CommandPrompt;
     private int _historySize = 2000;
+    private HtmlPreviewScope _previewScope = AppSettings.LoadPreviewScope();
     private bool _updateCheckInProgress;
     private bool _suppressRightMouseUp;
     private Key? _pendingContextMenuKey;
@@ -307,6 +308,23 @@ ApplySavedFontSettings();
                 "Export session",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
+        }
+    }
+
+    private void HtmlPreviewButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var directory = Path.Combine(Path.GetTempPath(), "RtlTerminal", "Previews");
+            Directory.CreateDirectory(directory);
+            var path = Path.Combine(directory, $"preview-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}.html");
+            File.WriteAllText(path, TerminalTextBox.CreateHtmlPreview(_previewScope), new UTF8Encoding(false));
+            Process.Start(new ProcessStartInfo(new Uri(path).AbsoluteUri + "#terminal-end") { UseShellExecute = true });
+            TerminalHtmlExporter.DeleteOlderPreviews(directory, path);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        {
+            MessageBox.Show(this, exception.Message, "HTML preview", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -592,7 +610,7 @@ ApplySavedFontSettings();
             TerminalTextBox.FontSize,
             TerminalTextBox.FontWeight,
             TerminalTextBox.FontStyle,
-            _historySize)
+            _historySize, _previewScope)
         {
             Owner = this
         };
@@ -604,6 +622,8 @@ ApplySavedFontSettings();
         ApplyFontSettings(settingsWindow.SelectedSettings);
         AppSettings.SaveFont(settingsWindow.SelectedSettings);
         AppSettings.SaveHistorySize(settingsWindow.SelectedHistorySize);
+        _previewScope = settingsWindow.SelectedPreviewScope;
+        AppSettings.SavePreviewScope(_previewScope);
         TerminalTextBox.Focus();
     }
 

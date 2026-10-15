@@ -38,7 +38,9 @@ public sealed record TerminalLine(
     IReadOnlyList<TerminalRun> Runs,
     int CellLength)
 {
-    internal bool ContainsRightToLeft { get; } =
+    public bool WrappedFromPrevious { get; init; }
+
+    internal bool ContainsRightToLeft =>
         SmartRtl.ContainsRightToLeft(Runs);
 }
 
@@ -51,7 +53,10 @@ public sealed record TerminalSnapshot(
     long ScrollbackStartIndex,
     TerminalModes Modes,
     IReadOnlyList<string> Responses,
-    long Revision);
+    long Revision)
+{
+    public int Columns { get; init; }
+}
 
 public sealed class TerminalBuffer
 {
@@ -1449,18 +1454,20 @@ public sealed class TerminalBuffer
         for (var row = 0; row <= lastVisibleRow; row++)
         {
             var lastCharacter = FindLastCharacter(row);
-            var cellLength = lastCharacter + 1;
+            var cellLength = row + 1 < _rows && _wrappedFromPrevious[row + 1]
+                ? _columns : lastCharacter + 1;
 
             if (row == _cursorRow)
                 cellLength = Math.Max(cellLength, _cursorColumn + 1);
 
             var cached = _snapshotLines[row];
-            var unchanged = cached is not null && cached.CellLength == cellLength;
+            var unchanged = cached is not null && cached.CellLength == cellLength &&
+                cached.WrappedFromPrevious == _wrappedFromPrevious[row];
             for (var column = 0; unchanged && column < cellLength; column++)
                 unchanged = _snapshotCells[row, column] == _cells[row, column];
             if (!unchanged)
             {
-                cached = CreateLine(_cells, row, cellLength);
+                cached = CreateLine(_cells, row, cellLength) with { WrappedFromPrevious = _wrappedFromPrevious[row] };
                 _snapshotLines[row] = cached;
                 for (var column = 0; column < cellLength; column++)
                     _snapshotCells[row, column] = _cells[row, column];
@@ -1488,14 +1495,13 @@ public sealed class TerminalBuffer
                 _sgrMouse,
                 _synchronizedOutput),
             responses,
-            ++_revision);
+            ++_revision) { Columns = _columns };
     }
 
-    private TerminalLine CreateLine(Cell[] cells, int cellLength)
+    private TerminalLine CreateLine(Cell[] cells, int cellLength, bool preserveTrailingSpaces)
     {
-        var lastCharacter = FindLastCharacter(cells);
         return new TerminalLine(
-            CreateRuns(cells, Math.Min(cellLength, lastCharacter + 1)),
+            CreateRuns(cells, preserveTrailingSpaces ? cellLength : Math.Min(cellLength, FindLastCharacter(cells) + 1)),
             cellLength);
     }
 
@@ -1609,7 +1615,7 @@ public sealed class TerminalBuffer
         for (var column = 0; column < _columns; column++)
             copy[column] = _cells[row, column];
 
-        _scrollback.Add(CreateLine(copy, copy.Length));
+        _scrollback.Add(CreateLine(copy, copy.Length, row + 1 < _rows && _wrappedFromPrevious[row + 1]) with { WrappedFromPrevious = _wrappedFromPrevious[row] });
 
         if (_scrollback.Count > _maximumScrollbackRows + 128)
             TrimScrollback();

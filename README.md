@@ -75,7 +75,7 @@ Rtl Terminal uses the Windows ConPTY API and works with command-line environment
 - Provide a built-in guide in English, Persian and Arabic.
 - Check GitHub Releases for updates manually or at startup, with a per-version dismissal option.
 - Use a consistent dark interface for menus, tabs and window controls.
-- Support self-contained, single-file Windows releases.
+- Support self-contained Windows releases with a bundled Unicode-aware ConPTY host.
 
 ### Screenshots
 
@@ -94,11 +94,11 @@ inside Rtl Terminal with Smart RTL enabled.
 
 ### System Requirements
 
-- Windows 10 version 1809 or newer
+- Windows 10 version 2004 (build 19041) or newer
 - Windows 11
 - x64 processor for the provided release configuration
 
-Windows 10 version 1809 is the minimum supported version because Rtl Terminal uses the Windows ConPTY API. Windows 7 and Windows 10 versions older than 1809 are not supported by the current backend.
+Windows 10 version 2004 (build 19041) is the minimum supported version because Rtl Terminal ships the modern Microsoft ConPTY host. Windows 7 and Windows 10 versions older than 2004 (build 19041) are not supported by the current backend.
 
 ### Installation
 
@@ -119,7 +119,7 @@ Download `RtlTerminal.exe` from the release assets and run it directly. The self
 
 Requirements:
 
-- Windows 10 version 1809 or newer
+- Windows 10 version 2004 (build 19041) or newer
 - .NET 8 SDK
 - Visual Studio 2022 with WPF support, or the .NET CLI
 - Inno Setup 6 when building the installer
@@ -233,7 +233,10 @@ On Windows 11, the current registry integration may appear under **Show more opt
 ### Known Limitations
 
 - Theme switching currently covers the main window; font, guide and update dialogs retain their existing dark styling. Light mode preserves explicit RGB and extended palette colors, so applications may need their own light theme for readable output.
-- The current terminal backend requires Windows ConPTY.
+- The terminal ships Microsoft.Windows.Console.ConPTY 1.25.260930003 in the `ConPty` directory. Keep that directory next to the executable, including for single-file publishes; the installer includes it.
+- Persian combining marks and ZWNJ use grapheme widths in both ConPTY and the terminal buffer. This prevents spaces being overwritten when Codex/TUI output is repainted.
+- Smart RTL wraps complete words in automatically wrapped Persian paragraphs. Explicit application line breaks, alternate screens and mouse-tracking grids are preserved. A token wider than the terminal still requires a character break.
+- The eye button beside SMART RTL opens a styled HTML copy of the visible page in your default browser. Soft wraps are joined for browser word wrapping; explicit line breaks are retained. The file stays locally under the temporary RtlTerminal/Previews directory.
 - Windows 7 is not supported.
 - The Windows 11 modern context menu is not directly extended by the current registry integration.
 - The custom WPF renderer is not the Windows Terminal rendering engine; CLI/TUI compatibility still needs application-specific testing.
@@ -324,11 +327,11 @@ No license file is currently included. Add a `LICENSE` file before accepting ext
 
 ### نیازمندی‌های سیستم
 
-- ویندوز ۱۰ نسخه 1809 یا جدیدتر
+- ویندوز ۱۰ نسخه 2004 (build 19041) یا جدیدتر
 - ویندوز ۱۱
 - پردازنده ۶۴ بیتی برای خروجی فعلی
 
-نسخه 1809 ویندوز ۱۰ حداقل نسخه پشتیبانی‌شده است، زیرا برنامه از API مربوط به Windows ConPTY استفاده می‌کند. ویندوز ۷ و نسخه‌های قدیمی‌تر ویندوز ۱۰ در backend فعلی پشتیبانی نمی‌شوند.
+نسخه 2004 (build 19041) ویندوز ۱۰ حداقل نسخه پشتیبانی‌شده است، زیرا برنامه از API مربوط به Windows ConPTY استفاده می‌کند. ویندوز ۷ و نسخه‌های قدیمی‌تر ویندوز ۱۰ در backend فعلی پشتیبانی نمی‌شوند.
 
 ### نصب
 
@@ -450,11 +453,11 @@ git push origin main
 
 ### متطلبات النظام
 
-- Windows 10 الإصدار 1809 أو أحدث
+- Windows 10 الإصدار 2004 (build 19041) أو أحدث
 - Windows 11
 - معالج x64 لإصدار التوزيع الحالي
 
-الإصدار 1809 من Windows 10 هو الحد الأدنى لأن البرنامج يستخدم Windows ConPTY. لا يدعم backend الحالي نظام Windows 7 أو إصدارات Windows 10 الأقدم.
+الإصدار 2004 (build 19041) من Windows 10 هو الحد الأدنى لأن البرنامج يستخدم Windows ConPTY. لا يدعم backend الحالي نظام Windows 7 أو إصدارات Windows 10 الأقدم.
 
 ### التثبيت
 

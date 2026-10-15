@@ -476,6 +476,14 @@
                 </Style>
             </TextBlock.Style>
         </TextBlock>
+        <Button x:Name="HtmlPreviewButton" DockPanel.Dock="Right" Width="30" Height="26" Margin="8,0,0,0"
+                Style="{StaticResource WindowCaptionButtonStyle}" Click="HtmlPreviewButton_Click"
+                ToolTip="Preview this page in your browser" AutomationProperties.Name="HTML preview">
+            <Viewbox Width="16" Height="16">
+                <Path Data="M1,8 C4,2 12,2 15,8 C12,14 4,14 1,8 Z M10,8 A2,2 0 1 1 6,8 A2,2 0 1 1 10,8"
+                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.3" />
+            </Viewbox>
+        </Button>
         <Menu Height="28" FontFamily="Segoe UI" FontSize="12"
               Background="Transparent"
               Foreground="{DynamicResource ChromeForegroundBrush}"
@@ -495,7 +503,7 @@
                           Click="ExitMenuItem_Click" />
             </MenuItem>
             <MenuItem Header="_Edit">
-                <MenuItem Header="_Font settings..."
+                <MenuItem Header="_Settings..."
                           Click="FontSettingsMenuItem_Click" />
             </MenuItem>
             <MenuItem Header="_View">

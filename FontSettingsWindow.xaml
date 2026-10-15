@@ -1,18 +1,19 @@
 <Window x:Class="RtlTerminal.FontSettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Font settings"
+        Title="Settings"
         Icon="RtlTerminal.ico"
         Width="640"
-        Height="540"
+        Height="620"
         MinWidth="540"
-        MinHeight="460"
+        MinHeight="540"
         WindowStartupLocation="CenterOwner"
         Background="#f4f5f7">
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -107,7 +108,16 @@
             </StackPanel>
         </Grid>
 
-        <Border Grid.Row="2"
+        <StackPanel Grid.Row="2" Margin="0,14,0,0">
+            <TextBlock Text="HTML preview range" Margin="0,0,0,5" />
+            <ComboBox x:Name="PreviewScopeComboBox">
+                <ComboBoxItem Content="Current page only" />
+                <ComboBoxItem Content="Two pages before the current view through the end" />
+                <ComboBoxItem Content="Entire available history" />
+            </ComboBox>
+        </StackPanel>
+
+        <Border Grid.Row="3"
                 Background="#10151f"
                 CornerRadius="8"
                 Padding="16"
@@ -118,7 +128,7 @@
                        Text="Rtl Terminal  |  ترمینال فارسی  |  1234567890&#x0a;https://behnamapps.example" />
         </Border>
 
-        <StackPanel Grid.Row="3"
+        <StackPanel Grid.Row="4"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
             <Button Width="90"

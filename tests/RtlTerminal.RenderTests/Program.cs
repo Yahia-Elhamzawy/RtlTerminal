@@ -29,6 +29,8 @@ internal static partial class Program
             WindowStateSmoke.Run();
             return;
         }
+        if (Environment.GetCommandLineArgs().Contains("--conpty-child")) { ConPtyPersianProbe.Child(); return; }
+        if (Environment.GetCommandLineArgs().Contains("--conpty-persian")) { ConPtyPersianProbe.Run(); return; }
         var view = new TerminalView
         {
             Width = 800, Height = 420, FontFamily = new FontFamily("Consolas"),
@@ -87,6 +89,9 @@ internal static partial class Program
         CheckCodexPersian();
         CheckItalic();
         CheckThemes();
+        CheckPersianWordWrapAndHtml();
+        CheckPreviewAndScrollCache();
+        Render(new TerminalView { Width = 800, Height = 420, FontFamily = new FontFamily("Consolas"), FontSize = 18, Background = Brushes.Black }, ConPtyPersianProbe.Run(), "native-persian.png");
     }
     private static void CheckItalic()
     {
@@ -287,6 +292,8 @@ internal static partial class Program
 
     private static void CheckWindowHeader()
     {
+        if (Application.Current is null) _ = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+        AppTheme.Apply(AppThemeKind.Dark);
         // Instantiate chrome without showing a window or starting any shell.
         var window = new MainWindow();
         const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
@@ -310,6 +317,10 @@ internal static partial class Program
             var location = add.TranslatePoint(new Point(), root);
             if (location.X < 0 || location.X + add.ActualWidth > width - 138)
                 throw new Exception("New-tab control is hidden by overflow or caption buttons");
+            var preview = (FrameworkElement)window.FindName("HtmlPreviewButton");
+            var previewLocation = preview.TranslatePoint(new Point(), root);
+            if (preview.ActualWidth < 20 || previewLocation.X < 0 || previewLocation.X + preview.ActualWidth > width || previewLocation.Y > 80)
+                throw new Exception("HTML preview button is outside the visible toolbar");
             var scroller = (System.Windows.Controls.ScrollViewer)window.FindName("TabScroller");
             if (count == 8 && scroller.ScrollableWidth <= 0) throw new Exception("Tab overflow is not scrollable");
             var bitmap = new RenderTargetBitmap(width, 80, 96, 96, PixelFormats.Pbgra32);

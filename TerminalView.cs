@@ -13,6 +13,7 @@ public sealed class TerminalView : ContentControl
     private readonly ScrollViewer _scroll;
     private readonly Surface _surface;
     private TerminalSnapshot? _snapshot;
+    private long _sourceScrollbackStart;
     private bool _smartRtl;
     private bool _rowRtl;
     private double _cellWidth = 8.5, _lineHeight = 18;
@@ -22,7 +23,7 @@ public sealed class TerminalView : ContentControl
     private readonly Dictionary<TerminalColor, Brush> _brushes = [];
     private string _fontKey = string.Empty;
     private readonly Dictionary<(string Text, TerminalStyle Style, bool Link), FormattedText> _glyphCache = [];
-    private static readonly Regex Links = new(@"(?i)\b(?:https?://|www\.)[^\s<>{}\[\]""']+", RegexOptions.Compiled);
+    internal static readonly Regex Links = new(@"(?i)\b(?:https?://|www\.)[^\s<>{}\[\]""']+", RegexOptions.Compiled);
     public event Action<Uri>? LinkRequested;
     public bool HasSelection => _anchor is not null && _end is not null && _anchor != _end;
     public bool IsSelecting => _dragging;
@@ -90,6 +91,11 @@ public sealed class TerminalView : ContentControl
     public void Present(TerminalSnapshot snapshot, bool smartRtl, double cellWidth,
         double lineHeight, bool followOutput, bool rowRtl = false)
     {
+        // Reflow the presentation only; application cursor commands still target the VT grid.
+        var sourceStart = snapshot.ScrollbackStartIndex;
+        if (sourceStart != _sourceScrollbackStart) ClearSelection();
+        _sourceScrollbackStart = sourceStart;
+        if (smartRtl) snapshot = TerminalWordWrap.Reflow(snapshot);
         IsUpdatingScroll = true;
         Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle,
             () => IsUpdatingScroll = false);
@@ -109,7 +115,7 @@ public sealed class TerminalView : ContentControl
             previous.CursorVisible == snapshot.CursorVisible && previous.CursorRow == snapshot.CursorRow &&
             previous.CursorColumn == snapshot.CursorColumn && previous.Lines.Count == snapshot.Lines.Count &&
             previous.Lines.Zip(snapshot.Lines).All(pair => ReferenceEquals(pair.First, pair.Second) ||
-                pair.First.CellLength == pair.Second.CellLength && pair.First.Runs.SequenceEqual(pair.Second.Runs));
+                pair.First.CellLength == pair.Second.CellLength && pair.First.WrappedFromPrevious == pair.Second.WrappedFromPrevious && pair.First.Runs.SequenceEqual(pair.Second.Runs));
         if (trimmed != 0 || _smartRtl != smartRtl || _rowRtl != rowRtl || _cellWidth != cellWidth ||
             _lineHeight != lineHeight || _fontKey != fontKey ||
             _snapshot?.Modes.AlternateScreen != snapshot.Modes.AlternateScreen)
@@ -125,6 +131,21 @@ public sealed class TerminalView : ContentControl
         if (!sameFrame) _surface.InvalidateVisual();
         if (followOutput) _scroll.ScrollToEnd();
         else if (trimmed > 0) _scroll.ScrollToVerticalOffset(Math.Max(0, VerticalOffset - trimmed * lineHeight));
+    }
+
+    public string CreateHtmlPreview(HtmlPreviewScope scope = HtmlPreviewScope.CurrentPage)
+    {
+        if (_snapshot is null) return TerminalHtmlExporter.Create([], FontFamily.Source, FontSize, _lineHeight);
+        var first = Math.Max(0, (int)Math.Floor(VerticalOffset / _lineHeight));
+        var last = Math.Min(_snapshot.Lines.Count, (int)Math.Ceiling((VerticalOffset + ViewportHeight) / _lineHeight));
+        if (scope == HtmlPreviewScope.EntireHistory) { first = 0; last = _snapshot.Lines.Count; }
+        else if (scope == HtmlPreviewScope.RecentToEnd)
+        {
+            first = Math.Max(0, (int)Math.Floor((VerticalOffset - 2 * ViewportHeight) / _lineHeight));
+            last = _snapshot.Lines.Count;
+        }
+        return TerminalHtmlExporter.Create(_snapshot.Lines.Skip(first).Take(Math.Max(0, last - first)).ToArray(),
+            FontFamily.Source, FontSize, _lineHeight, FontWeight.ToOpenTypeWeight() >= 600, FontStyle != FontStyles.Normal);
     }
 
     public void RefreshTheme()
@@ -216,7 +237,7 @@ public sealed class TerminalView : ContentControl
             var text = Text(_snapshot.Lines[row]);
             var from = row == start.Row ? Math.Min(start.Offset, text.Length) : 0;
             var to = row == end.Row ? Math.Min(end.Offset, text.Length) : text.Length;
-            if (row > start.Row) result.AppendLine();
+            if (row > start.Row && !_snapshot.Lines[row].WrappedFromPrevious) result.AppendLine();
             result.Append(text[from..Math.Max(from, to)]);
         }
         return result.ToString();
@@ -383,7 +404,7 @@ public sealed class TerminalView : ContentControl
         _brushes[color] = brush;
         return brush;
     }
-    private static (TerminalColor Foreground, TerminalColor Background) Colors(TerminalStyle style)
+    internal static (TerminalColor Foreground, TerminalColor Background) Colors(TerminalStyle style)
     {
         var fg = style.Foreground is { } foreground ? AppTheme.MapForeground(foreground, style.ForegroundPaletteIndex) : AppTheme.DefaultForeground;
         var bg = style.Background is { } background ? AppTheme.MapBackground(background, style.BackgroundPaletteIndex) : AppTheme.DefaultBackground;
@@ -401,7 +422,10 @@ public sealed class TerminalView : ContentControl
         dc.PushClip(new RectangleGeometry(new Rect(0, top, Math.Max(0, _scroll.ViewportWidth), Math.Max(0, _scroll.ViewportHeight))));
         var first = Math.Max(0, (int)(top / _lineHeight));
         var last = Math.Min(_snapshot.Lines.Count, (int)Math.Ceiling((top + _scroll.ViewportHeight) / _lineHeight) + 1);
-        foreach (var key in _layouts.Keys.Where(key => key < first || key >= last).ToArray()) _layouts.Remove(key);
+        // Keep recently shaped rows around the viewport, without shaping unseen rows.
+        // The bounded cache avoids repeating Persian shaping on small scroll reversals.
+        var cacheMargin = Math.Max(64, 3 * (last - first));
+        foreach (var key in _layouts.Keys.Where(key => key < first - cacheMargin || key >= last + cacheMargin).ToArray()) _layouts.Remove(key);
         _surface.RetainRows(first, last);
         for (var row = first; row < last; row++)
         {

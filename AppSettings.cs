@@ -9,6 +9,8 @@ public readonly record struct TerminalFontSettings(
     bool Bold,
     bool Italic);
 
+public enum HtmlPreviewScope { CurrentPage, RecentToEnd, EntireHistory }
+
 public static class AppSettings
 {
     private const string SettingsKey = @"Software\RtlTerminal";
@@ -59,6 +61,19 @@ public static class AppSettings
             "LastCmdDirectories",
             directories,
             RegistryValueKind.MultiString);
+    }
+
+    public static HtmlPreviewScope LoadPreviewScope()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(SettingsKey);
+        return Enum.TryParse<HtmlPreviewScope>(key?.GetValue("HtmlPreviewScope") as string, out var scope) && Enum.IsDefined(scope)
+            ? scope : HtmlPreviewScope.CurrentPage;
+    }
+
+    public static void SavePreviewScope(HtmlPreviewScope scope)
+    {
+        using var key = Registry.CurrentUser.CreateSubKey(SettingsKey);
+        key.SetValue("HtmlPreviewScope", scope.ToString(), RegistryValueKind.String);
     }
 
     public static int LoadHistorySize()

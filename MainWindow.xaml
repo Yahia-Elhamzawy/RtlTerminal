@@ -507,6 +507,17 @@
                           Click="FontSettingsMenuItem_Click" />
             </MenuItem>
             <MenuItem Header="_View">
+                <MenuItem x:Name="SplitPaneMenuItem" Header="_Split pane" InputGestureText="Ctrl+Shift+D"
+                          Click="SplitPaneMenuItem_Click" />
+                <MenuItem x:Name="JoinTabMenuItem" Header="Show _tab side by side"
+                          SubmenuOpened="JoinTabMenuItem_SubmenuOpened">
+                    <MenuItem Header="No other tabs" IsEnabled="False" />
+                </MenuItem>
+                <MenuItem Header="_Move pane to a new tab"
+                          Click="MovePaneMenuItem_Click" />
+                <MenuItem x:Name="ClosePaneMenuItem" Header="Close _pane" InputGestureText="Ctrl+Shift+W"
+                          Click="ClosePaneMenuItem_Click" />
+                <Separator />
                 <MenuItem x:Name="SmartRtlMenuItem"
                           Header="_Smart RTL"
                           IsCheckable="True"
@@ -544,6 +555,9 @@
         </DockPanel>
         </Border>
 
+        <ScrollViewer x:Name="PaneScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                      CanContentScroll="False" Focusable="False" SizeChanged="PaneScroller_SizeChanged" ScrollChanged="PaneScroller_ScrollChanged">
+        <Grid x:Name="PaneHost" HorizontalAlignment="Left">
         <local:TerminalView x:Name="TerminalTextBox"
                      Background="{DynamicResource TerminalBackgroundBrush}"
                      Foreground="{DynamicResource TerminalForegroundBrush}"
@@ -559,18 +573,9 @@
                      Typography.ContextualLigatures="False"
                      Typography.DiscretionaryLigatures="False"
                      Typography.Kerning="False"
-                     Typography.NumeralAlignment="Tabular"
-                     ScrollViewer.ScrollChanged="TerminalTextBox_ScrollChanged"
-                     PreviewKeyDown="TerminalTextBox_PreviewKeyDown"
-                     PreviewKeyUp="TerminalTextBox_PreviewKeyUp"
-                     PreviewMouseDown="TerminalTextBox_PreviewMouseDown"
-                     PreviewMouseUp="TerminalTextBox_PreviewMouseUp"
-                     PreviewMouseMove="TerminalTextBox_PreviewMouseMove"
-                     PreviewMouseWheel="TerminalTextBox_PreviewMouseWheel"
-                     PreviewMouseRightButtonDown="TerminalTextBox_PreviewMouseRightButtonDown"
-                     GotKeyboardFocus="TerminalTextBox_GotKeyboardFocus"
-                     LostKeyboardFocus="TerminalTextBox_LostKeyboardFocus"
-                     PreviewTextInput="TerminalTextBox_PreviewTextInput" />
+                     Typography.NumeralAlignment="Tabular" />
+        </Grid>
+        </ScrollViewer>
     </DockPanel>
     </Border>
 </Window>

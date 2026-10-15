@@ -55,7 +55,10 @@ Rtl Terminal uses the Windows ConPTY API and works with command-line environment
 - Support ANSI standard colors, bright colors, dim text, 256 colors and RGB colors.
 - Run interactive CLI and TUI applications through Windows ConPTY.
 - Open multiple Command Prompt, PowerShell and WSL sessions in independent tabs.
-- Switch tabs with `Ctrl+Tab`, create a tab with `Ctrl+Shift+T` and close it with `Ctrl+W`.
+- Switch tabs with `Ctrl+Tab`, create a tab with `Ctrl+Shift+T` and close the active pane (or its last tab) with `Ctrl+Shift+W`.
+- Right-click a tab and choose **Split tab** to split that tab, or **Color...** to choose its background color (including a custom color or reset).
+- Split with `Ctrl+Shift+D` (side by side when wide enough, top and bottom when the selected pane is narrow); switch panes with `Ctrl+Shift+Left/Right`. Each pane shortcut can be disabled in Settings. `Ctrl+W` is passed to the terminal.
+- Join an open tab using its context menu, or move a pane back to a separate tab from View. Joining is refused when the window cannot fit all panes.
 - Render animated progress bars and in-place terminal line updates.
 - Keep long-running AI agent output responsive with incremental scrollback rendering.
 - Choose a 2,000, 5,000 or 10,000-line scrollback history limit in Font settings.
@@ -194,7 +197,7 @@ The installer includes the self-contained .NET runtime. The workflow can also be
 | Bypass application mouse capture | Hold `Shift` while selecting or right-clicking |
 | Create a tab using the default profile | `Ctrl+Shift+T` |
 | Switch to the next or previous tab | `Ctrl+Tab` or `Ctrl+Shift+Tab` |
-| Close the active tab | `Ctrl+W` |
+| Close the active pane or its last tab | `Ctrl+Shift+W` |
 | Interrupt the active command | `Ctrl+C` when no text is selected |
 | Open a detected link | Hold `Ctrl` and click the blue link |
 | Toggle automatic RTL detection | `View` → `Smart RTL` |
@@ -393,7 +396,7 @@ git push origin main
 | انتخاب متن در برنامه‌های دریافت‌کنندهٔ ماوس | نگه‌داشتن `Shift` |
 | ساخت تب با پروفایل پیش‌فرض | `Ctrl+Shift+T` |
 | جابه‌جایی بین تب‌ها | `Ctrl+Tab` یا `Ctrl+Shift+Tab` |
-| بستن تب فعال | `Ctrl+W` |
+| بستن پنل فعال یا آخرین تب آن | `Ctrl+Shift+W` |
 | متوقف‌کردن فرمان جاری | `Ctrl+C` در صورتی که متنی انتخاب نشده باشد |
 | بازکردن لینک | نگه‌داشتن `Ctrl` و کلیک روی لینک آبی |
 | فعال‌کردن تشخیص خودکار RTL | منوی `View` و گزینه `Smart RTL` |
@@ -519,7 +522,7 @@ git push origin main
 | تجاوز التقاط الفأرة | اضغط باستمرار على `Shift` |
 | إنشاء علامة بالبيئة الافتراضية | `Ctrl+Shift+T` |
 | التنقل بين علامات التبويب | `Ctrl+Tab` أو `Ctrl+Shift+Tab` |
-| إغلاق علامة التبويب النشطة | `Ctrl+W` |
+| إغلاق الجزء النشط أو علامته الأخيرة | `Ctrl+Shift+W` |
 | مقاطعة الأمر الحالي | `Ctrl+C` عند عدم تحديد نص |
 | فتح رابط | اضغط باستمرار على `Ctrl` ثم انقر على الرابط الأزرق |
 | تفعيل اكتشاف RTL تلقائياً | قائمة `View` ثم `Smart RTL` |

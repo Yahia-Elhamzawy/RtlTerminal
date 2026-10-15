@@ -63,6 +63,21 @@ public static class AppSettings
             RegistryValueKind.MultiString);
     }
 
+    public static PaneShortcutSettings LoadPaneShortcuts()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(SettingsKey);
+        bool Enabled(string name) => key?.GetValue(name) is not int value || value != 0;
+        return new(Enabled("PaneSplitShortcut"), Enabled("PaneNavigateShortcut"), Enabled("PaneCloseShortcut"));
+    }
+
+    public static void SavePaneShortcuts(PaneShortcutSettings settings)
+    {
+        using var key = Registry.CurrentUser.CreateSubKey(SettingsKey);
+        key.SetValue("PaneSplitShortcut", settings.Split ? 1 : 0, RegistryValueKind.DWord);
+        key.SetValue("PaneNavigateShortcut", settings.Navigate ? 1 : 0, RegistryValueKind.DWord);
+        key.SetValue("PaneCloseShortcut", settings.Close ? 1 : 0, RegistryValueKind.DWord);
+    }
+
     public static HtmlPreviewScope LoadPreviewScope()
     {
         using var key = Registry.CurrentUser.OpenSubKey(SettingsKey);

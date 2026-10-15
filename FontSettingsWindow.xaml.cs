@@ -39,7 +39,8 @@ public partial class FontSettingsWindow : Window
         FontWeight weight,
         FontStyle style,
         int historySize,
-        HtmlPreviewScope previewScope = HtmlPreviewScope.CurrentPage)
+        HtmlPreviewScope previewScope = HtmlPreviewScope.CurrentPage,
+        PaneShortcutSettings? shortcuts = null)
     {
         InitializeComponent();
         _fontFamilies = Fonts.SystemFontFamilies
@@ -63,11 +64,16 @@ public partial class FontSettingsWindow : Window
             10000 => 2,
             _ => 0
         };
+        shortcuts ??= new();
+        SplitShortcutCheckBox.IsChecked = shortcuts.Split;
+        NavigateShortcutCheckBox.IsChecked = shortcuts.Navigate;
+        CloseShortcutCheckBox.IsChecked = shortcuts.Close;
         PreviewScopeComboBox.SelectedIndex = (int)previewScope;
         RefreshFontList();
     }
 
     public TerminalFontSettings SelectedSettings { get; private set; }
+    public PaneShortcutSettings SelectedPaneShortcuts { get; private set; } = new();
     public HtmlPreviewScope SelectedPreviewScope { get; private set; }
     public int SelectedHistorySize { get; private set; } = 2000;
 
@@ -177,6 +183,7 @@ public partial class FontSettingsWindow : Window
             ItalicCheckBox.IsChecked == true);
         SelectedHistorySize = GetHistorySize();
         SelectedPreviewScope = (HtmlPreviewScope)Math.Max(0, PreviewScopeComboBox.SelectedIndex);
+        SelectedPaneShortcuts = new(SplitShortcutCheckBox.IsChecked == true, NavigateShortcutCheckBox.IsChecked == true, CloseShortcutCheckBox.IsChecked == true);
         DialogResult = true;
     }
 

@@ -23,15 +23,18 @@ internal static class ConPtyPersianProbe
         try
         {
             var args = Environment.GetCommandLineArgs();
+            var shellLaunch = args.Contains("--shell-launch");
             var launch = Array.IndexOf(args, "--codex-launch");
-            if (launch >= 0)
+            if (launch >= 0 || shellLaunch)
             {
                 var input = CreateFile("CONIN$", 0xC0000000, 3, IntPtr.Zero, 3, 0, IntPtr.Zero);
                 try
                 {
                     SetHandleInformation(input, 1, 1); SetHandleInformation(handle, 1, 1);
                     SetStdHandle(-10, input); SetStdHandle(-11, handle); SetStdHandle(-12, handle);
-                    var info = new ProcessStartInfo(args[launch + 1], "--no-alt-screen") { UseShellExecute = false, WorkingDirectory = args[launch + 2] };
+                    var info = shellLaunch
+                        ? new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "cmd.exe"), "/D /Q /K \"prompt $G\"") { UseShellExecute = false }
+                        : new ProcessStartInfo(args[launch + 1], "--no-alt-screen") { UseShellExecute = false, WorkingDirectory = args[launch + 2] };
                     info.Environment["TERM"] = "xterm-256color";
                     using var process = Process.Start(info)!;
                     process.WaitForExit();

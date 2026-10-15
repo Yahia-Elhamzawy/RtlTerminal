@@ -4,9 +4,9 @@
         Title="Settings"
         Icon="RtlTerminal.ico"
         Width="640"
-        Height="620"
+        Height="740"
         MinWidth="540"
-        MinHeight="540"
+        MinHeight="660"
         WindowStartupLocation="CenterOwner"
         Background="#f4f5f7">
     <Grid Margin="20">
@@ -115,6 +115,11 @@
                 <ComboBoxItem Content="Two pages before the current view through the end" />
                 <ComboBoxItem Content="Entire available history" />
             </ComboBox>
+            <TextBlock Text="Pane keyboard shortcuts" Margin="0,14,0,6" FontWeight="SemiBold" />
+            <CheckBox x:Name="SplitShortcutCheckBox" Content="Ctrl+Shift+D — Open a new pane" Margin="0,0,0,5" />
+            <CheckBox x:Name="NavigateShortcutCheckBox" Content="Ctrl+Shift+Left / Right — Switch panes" Margin="0,0,0,5" />
+            <CheckBox x:Name="CloseShortcutCheckBox" Content="Ctrl+Shift+W — Close the active pane (or its last tab)" />
+            <TextBlock Text="Disabled shortcuts are passed to the terminal. Ctrl+W is always passed through." Foreground="#697386" Margin="0,5,0,0" TextWrapping="Wrap" />
         </StackPanel>
 
         <Border Grid.Row="3"

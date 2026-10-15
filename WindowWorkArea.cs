@@ -13,6 +13,15 @@ internal static class WindowWorkArea
         window.Closed += (_, _) => source?.RemoveHook(HandleMessage);
     }
 
+    public static double GetAvailableWidth(Window window)
+    {
+        var handle = new WindowInteropHelper(window).Handle;
+        var monitor = handle == IntPtr.Zero ? IntPtr.Zero : MonitorFromWindow(handle, 2);
+        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        if (monitor == IntPtr.Zero || !GetMonitorInfo(monitor, ref info)) return SystemParameters.WorkArea.Width;
+        return (info.Work.Right - info.Work.Left) / System.Windows.Media.VisualTreeHelper.GetDpi(window).DpiScaleX;
+    }
+
     private static IntPtr HandleMessage(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if (message != 0x0024) return IntPtr.Zero; // WM_GETMINMAXINFO

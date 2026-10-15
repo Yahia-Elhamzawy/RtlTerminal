@@ -36,6 +36,7 @@ internal static partial class Program
             return new Rect(frame.TranslatePoint(new Point(),root),new Size(frame.ActualWidth,frame.ActualHeight));
         }
         Layout();
+        if (((MenuItem)window.FindName("MovePaneMenuItem")).IsEnabled) throw new Exception("Move pane command is enabled for an unsplit tab");
         var direction=Call("GetSplitDirection",pane)!;
         if(direction.ToString()!="SideBySide")throw new Exception("Wide pane did not prefer side-by-side split");
         var right=Call("AddSplitPane",tab,pane,direction)!;Layout();
@@ -69,6 +70,7 @@ internal static partial class Program
         if(Math.Abs(Bounds(right).Height-Bounds(pane).Height)>1)throw new Exception("Removing a stacked child left an empty layout cell");
         Call("ClosePane",right);Layout();
         if(((IList)Get(tab,"Panes")).Count!=1 || Bounds(pane).Width<900)throw new Exception("Collapsing split tree did not restore remaining pane");
+        if (((MenuItem)window.FindName("MovePaneMenuItem")).IsEnabled) throw new Exception("Move pane command did not disable after closing the last split");
         window.Close();
         Console.WriteLine("PASS automatic narrow-pane vertical split, neighbour preservation, small-pane rejection, nested size retention and collapse/detach");
     }

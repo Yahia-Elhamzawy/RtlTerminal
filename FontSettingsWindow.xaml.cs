@@ -70,6 +70,44 @@ public partial class FontSettingsWindow : Window
         CloseShortcutCheckBox.IsChecked = shortcuts.Close;
         PreviewScopeComboBox.SelectedIndex = (int)previewScope;
         RefreshFontList();
+        ThemeListBox.ItemsSource = ThemeOption.All;
+        ThemeListBox.SelectedItem = ThemeOption.All.First(t => t.Theme == AppTheme.Current && t.Scheme == AppTheme.Scheme);
+    }
+
+    public ThemeOption SelectedTheme { get; private set; } = ThemeOption.All[0];
+
+    public void ShowThemeTab()
+    {
+        SettingsTabs.SelectedItem = ThemeSettingsTab;
+        Loaded += (_, _) => { ThemeListBox.Focus(); ThemeListBox.ScrollIntoView(ThemeListBox.SelectedItem); };
+    }
+
+    private void ThemeListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ThemeListBox.SelectedItem is not ThemeOption option || ThemePreviewText is null) return;
+        ThemeListBox.ScrollIntoView(option);
+        // Preview uses local brushes only; it never changes AppTheme or saved settings.
+        ThemePreviewBorder.Background = ThemeOption.Brush(option.Background);
+        ThemePreviewHeading.Text = option.Name;
+        ThemePreviewHeading.Foreground = ThemeOption.Brush(option.Foreground);
+        ThemePreviewTitleBar.Background = new SolidColorBrush(option.Theme == AppThemeKind.Dark ? Color.FromRgb(48,49,52) : Color.FromRgb(230,233,238));
+        ThemePreviewTitle.Foreground = new SolidColorBrush(option.Theme == AppThemeKind.Dark ? Colors.White : Colors.Black);
+        ThemePreviewText.Inlines.Clear();
+        void Line(string text, TerminalColor color)
+        {
+            ThemePreviewText.Inlines.Add(new System.Windows.Documents.Run(text) { Foreground = ThemeOption.Brush(color) });
+            ThemePreviewText.Inlines.Add(new System.Windows.Documents.LineBreak());
+        }
+        Line("PS C:\\Projects> terminal", option.Foreground);
+        Line("سلام! این یک پیش‌نمایش فارسی است.", option.Foreground);
+        Line("English text and numbers 123", option.Foreground);
+        Line("✓ Build completed successfully", option.Ansi(2));
+        Line("! Warning: check configuration", option.Ansi(3));
+        Line("× Error: example message", option.Ansi(1));
+        Line("https://github.com/mirbehnam/RtlTerminal", option.Ansi(4));
+        ThemePreviewPalette.Children.Clear();
+        for (var i = 0; i < 16; i++)
+            ThemePreviewPalette.Children.Add(new Border { Width = 22, Height = 22, Margin = new Thickness(0,0,4,4), CornerRadius = new CornerRadius(3), Background = ThemeOption.Brush(option.Ansi(i)), ToolTip = $"ANSI {i}" });
     }
 
     public TerminalFontSettings SelectedSettings { get; private set; }
@@ -181,6 +219,7 @@ public partial class FontSettingsWindow : Window
             GetFontSize(),
             BoldCheckBox.IsChecked == true,
             ItalicCheckBox.IsChecked == true);
+        SelectedTheme = (ThemeOption)ThemeListBox.SelectedItem;
         SelectedHistorySize = GetHistorySize();
         SelectedPreviewScope = (HtmlPreviewScope)Math.Max(0, PreviewScopeComboBox.SelectedIndex);
         SelectedPaneShortcuts = new(SplitShortcutCheckBox.IsChecked == true, NavigateShortcutCheckBox.IsChecked == true, CloseShortcutCheckBox.IsChecked == true);

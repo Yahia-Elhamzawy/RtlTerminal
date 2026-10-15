@@ -484,6 +484,31 @@
                       Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.3" />
             </Viewbox>
         </Button>
+        <ToggleButton x:Name="DarkModeButton" DockPanel.Dock="Right" Width="30" Height="26" Margin="4,0,0,0"
+                      IsChecked="True" Click="DarkModeButton_Click" AutomationProperties.Name="Dark mode">
+            <ToggleButton.Style>
+                <Style TargetType="ToggleButton">
+                    <Setter Property="Foreground" Value="{DynamicResource ChromeForegroundBrush}"/>
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Template"><Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True"><Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/></Trigger>
+                                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource CaptionHoverBrush}"/></Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource CaptionHoverBrush}"/></Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value></Setter>
+                </Style>
+            </ToggleButton.Style>
+            <Path Width="15" Height="15" Stretch="Uniform" Data="M12,1 A7,7 0 1 0 15,12 A7,7 0 0 1 12,1 Z"
+                  Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"/>
+        </ToggleButton>
         <Menu Height="28" FontFamily="Segoe UI" FontSize="12"
               Background="Transparent"
               Foreground="{DynamicResource ChromeForegroundBrush}"
@@ -513,7 +538,7 @@
                           SubmenuOpened="JoinTabMenuItem_SubmenuOpened">
                     <MenuItem Header="No other tabs" IsEnabled="False" />
                 </MenuItem>
-                <MenuItem Header="_Move pane to a new tab"
+                <MenuItem x:Name="MovePaneMenuItem" IsEnabled="False" Header="_Move pane to a new tab"
                           Click="MovePaneMenuItem_Click" />
                 <MenuItem x:Name="ClosePaneMenuItem" Header="Close _pane" InputGestureText="Ctrl+Shift+W"
                           Click="ClosePaneMenuItem_Click" />
@@ -528,12 +553,7 @@
                           ToolTip="Force right-to-left direction and right alignment for every row, including full-screen applications. This may move application borders."
                           Checked="SmartRtlMenuItem_Changed" Unchecked="SmartRtlMenuItem_Changed" />
                 <Separator />
-                <MenuItem x:Name="ThemeMenuItem" Header="_Theme">
-                    <MenuItem x:Name="DarkThemeMenuItem" Header="_Dark" IsCheckable="True"
-                              Click="ThemeMenuItem_Click" />
-                    <MenuItem x:Name="LightThemeMenuItem" Header="_Light" IsCheckable="True"
-                              Click="ThemeMenuItem_Click" />
-                </MenuItem>
+                <MenuItem x:Name="ThemeMenuItem" Header="_Theme..." Click="ThemeMenuItem_Click" />
             </MenuItem>
             <MenuItem Header="_Tools">
                 <MenuItem x:Name="ContextMenuIntegrationMenuItem"

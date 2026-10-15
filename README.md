@@ -46,7 +46,8 @@ Rtl Terminal uses the Windows ConPTY API and works with command-line environment
 
 ### Features
 
-- Choose a saved dark or light theme from `View` → `Theme`. Light mode adapts the 16 ANSI colors while preserving explicit RGB and extended palette colors.
+- Open `View` → `Theme...` for the Theme tab in Settings. Browse the unified list with Up/Down to preview locally, then choose Apply to update all terminals. The moon button beside HTML preview switches between dark mode and Gruvbox Light.
+- Pick a ready-made color scheme from Settings → Theme: Campbell, One Half, Solarized, Tango, Dracula, GitHub Dark, Nord, Gruvbox, Tokyo Night and Catppuccin. A scheme sets the default and 16 ANSI colors and switches to its matching theme.
 - Custom WPF cell renderer with cached visible rows and seamless block/box graphics.
 - Chrome-style tabs, adjacent new-tab button, dark menus and vector window controls.
 - Default terminal font size of 14; existing saved font preferences are retained.
@@ -235,7 +236,7 @@ On Windows 11, the current registry integration may appear under **Show more opt
 
 ### Known Limitations
 
-- Theme switching currently covers the main window; font, guide and update dialogs retain their existing dark styling. Light mode preserves explicit RGB and extended palette colors, so applications may need their own light theme for readable output.
+- Theme switching currently covers the main window; settings, guide and update dialogs retain their own styling. Light mode preserves explicit RGB and extended palette colors, so applications may need their own light theme for readable output.
 - The terminal ships Microsoft.Windows.Console.ConPTY 1.25.260930003 in the `ConPty` directory. Keep that directory next to the executable, including for single-file publishes; the installer includes it.
 - Persian combining marks and ZWNJ use grapheme widths in both ConPTY and the terminal buffer. This prevents spaces being overwritten when Codex/TUI output is repainted.
 - Smart RTL wraps complete words in automatically wrapped Persian paragraphs. Explicit application line breaks, alternate screens and mouse-tracking grids are preserved. A token wider than the terminal still requires a character break.
@@ -301,6 +302,7 @@ No license file is currently included. Add a `LICENSE` file before accepting ext
 ### امکانات
 
 - انتخاب تم روشن یا تیره از `View` → `Theme` با ذخیرهٔ انتخاب؛ حفظ رنگ‌های RGB صریح برنامه‌ها
+- انتخاب طرح‌های رنگی آماده (Campbell، One Half، Solarized، Tango، Dracula، Nord، Gruvbox و دیگران) از تب `Theme` در تنظیمات؛ پیش‌نمایش با کلیدهای بالا و پایین و اعمال با `Apply`
 - اعمال Smart RTL برای هر خط با حفظ جهت درست بخش‌های انگلیسی، اعداد و علائم
 - نمایش متن فارسی، عربی، انگلیسی و متن‌های ترکیبی
 - پشتیبانی از رنگ‌های ANSI، رنگ‌های روشن، متن کم‌رنگ، ۲۵۶ رنگ و RGB
@@ -427,6 +429,7 @@ git push origin main
 ### المميزات
 
 - اختيار مظهر فاتح أو داكن من `View` → `Theme` مع حفظ الاختيار والحفاظ على ألوان RGB الصريحة
+- اختيار مخططات ألوان جاهزة (Campbell وOne Half وSolarized وTango وDracula وNord وGruvbox وغيرها) من تبويب `Theme` في الإعدادات، مع معاينة قبل الضغط على `Apply`
 - تطبيق Smart RTL لكل سطر مع الحفاظ على اتجاه المقاطع الإنجليزية والأرقام وعلامات الترقيم
 - عرض النصوص العربية والفارسية والإنجليزية والنصوص المختلطة
 - دعم ألوان ANSI والألوان الساطعة والنص الخافت و256 لوناً وألوان RGB

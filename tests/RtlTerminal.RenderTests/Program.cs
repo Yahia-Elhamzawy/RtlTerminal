@@ -94,6 +94,8 @@ internal static partial class Program
         CheckPanes();
         CheckTabMenusAndColors();
         CheckAutomaticSplit();
+        CheckSchemesAcrossPanes();
+        CheckThemeSettingsPreview();
         CheckLivePaneSessions();
         Render(new TerminalView { Width = 800, Height = 420, FontFamily = new FontFamily("Consolas"), FontSize = 18, Background = Brushes.Black }, ConPtyPersianProbe.Run(), "native-persian.png");
     }

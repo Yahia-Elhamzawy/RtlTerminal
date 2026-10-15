@@ -49,6 +49,7 @@ internal static partial class Program
         firstView.SelectAll(); var selected = firstView.GetSelectedText();
         if (!(bool)Call("TryJoinTab", first, false)!) throw new Exception("Two panes should fit in a normal window");
         Layout(980);
+        if (!((MenuItem)window.FindName("MovePaneMenuItem")).IsEnabled) throw new Exception("Move pane command stayed disabled after a split");
         var joinedBitmap = new RenderTargetBitmap(980,620,96,96,PixelFormats.Pbgra32); joinedBitmap.Render(root);
         var joinedPng = new PngBitmapEncoder(); joinedPng.Frames.Add(BitmapFrame.Create(joinedBitmap));
         using(var stream = File.Create("bin/render-checks/joined-panes.png")) joinedPng.Save(stream);

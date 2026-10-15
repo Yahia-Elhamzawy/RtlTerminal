@@ -35,6 +35,7 @@ public partial class MainWindow : Window
     private int _nextTabNumber = 1;
     private TerminalProfile _defaultProfile = TerminalProfile.CommandPrompt;
     private int _historySize = 2000;
+    private ColorScheme? _lastDarkScheme = AppTheme.IsLight ? null : AppTheme.Scheme;
     private PaneShortcutSettings _paneShortcuts = AppSettings.LoadPaneShortcuts();
     private HtmlPreviewScope _previewScope = AppSettings.LoadPreviewScope();
     private bool _updateCheckInProgress;
@@ -726,7 +727,9 @@ ApplySavedFontSettings();
         ActiveView.Focus();
     }
 
-    private void FontSettingsMenuItem_Click(object sender, RoutedEventArgs e)
+    private void FontSettingsMenuItem_Click(object sender, RoutedEventArgs e) => ShowSettings(openThemeTab: false);
+
+    private void ShowSettings(bool openThemeTab)
     {
         var settingsWindow = new FontSettingsWindow(
             TerminalTextBox.FontFamily.Source,
@@ -737,6 +740,8 @@ ApplySavedFontSettings();
         {
             Owner = this
         };
+
+        if (openThemeTab) settingsWindow.ShowThemeTab();
 
         if (settingsWindow.ShowDialog() != true)
             return;
@@ -749,6 +754,7 @@ ApplySavedFontSettings();
         AppSettings.SavePreviewScope(_previewScope);
         _paneShortcuts = settingsWindow.SelectedPaneShortcuts;
         AppSettings.SavePaneShortcuts(_paneShortcuts);
+        ApplyColors(settingsWindow.SelectedTheme.Theme, settingsWindow.SelectedTheme.Scheme);
         UpdateShortcutLabels();
         ActiveView.Focus();
     }
@@ -777,24 +783,41 @@ ApplySavedFontSettings();
         guideWindow.Show();
     }
 
-    private void ThemeMenuItem_Click(object sender, RoutedEventArgs e)
+    private void ThemeMenuItem_Click(object sender, RoutedEventArgs e) => ShowSettings(openThemeTab: true);
+
+    private void DarkModeButton_Click(object sender, RoutedEventArgs e)
     {
-        var theme = ReferenceEquals(sender, LightThemeMenuItem)
-            ? AppThemeKind.Light
-            : AppThemeKind.Dark;
-        AppTheme.Apply(theme);
-        AppSettings.SaveTheme(theme);
+        var option = ThemeOption.QuickMode(DarkModeButton.IsChecked == true, _lastDarkScheme);
+        ApplyColors(option.Theme, option.Scheme);
+    }
+
+    private void ApplyColors(AppThemeKind theme, ColorScheme? scheme)
+    {
+        AppTheme.Apply(theme, scheme);
+        if (!AppTheme.IsLight) _lastDarkScheme = scheme;
+        AppSettings.SaveTheme(AppTheme.Current);
+        AppSettings.SaveColorScheme(scheme?.Name);
+        RefreshColorViews();
+    }
+
+    private void RefreshColorViews()
+    {
         UpdateThemeMenu();
         RebuildTabStrip();
         foreach (var view in AllViews())
+        {
+            // Detached views in hidden tabs may retain a previously resolved resource.
+            view.SetResourceReference(BackgroundProperty, "TerminalBackgroundBrush");
+            view.SetResourceReference(ForegroundProperty, "TerminalForegroundBrush");
             view.RefreshTheme();
+        }
         ActiveView.Focus();
     }
 
     private void UpdateThemeMenu()
     {
-        DarkThemeMenuItem.IsChecked = !AppTheme.IsLight;
-        LightThemeMenuItem.IsChecked = AppTheme.IsLight;
+        DarkModeButton.IsChecked = !AppTheme.IsLight;
+        DarkModeButton.ToolTip = AppTheme.IsLight ? "Switch to dark mode" : "Switch to Gruvbox Light";
     }
 
     private async void CheckForUpdatesMenuItem_Click(
@@ -1546,6 +1569,7 @@ ApplySavedFontSettings();
 
     private void RebuildTabStrip()
     {
+        MovePaneMenuItem.IsEnabled = _activeTab is { Panes.Count: > 1 } tabGroup && tabGroup.Panes.Contains(tabGroup.ActivePane);
         TabStrip.Children.Clear();
         foreach (var tab in _tabs)
         {

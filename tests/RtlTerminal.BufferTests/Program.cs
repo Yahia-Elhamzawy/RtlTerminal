@@ -16,7 +16,8 @@ var tests = new (string Name, Action Run)[]
     ("style changes preserve pending autowrap", StylePreservesWrap),
     ("status redraw clears old characters across reads", StatusRedraw),
     ("wide characters can be erased and overwritten", WideErase),
-    ("snapshot rows are reused without hiding edits", SnapshotReuse)
+    ("snapshot rows are reused without hiding edits", SnapshotReuse),
+    ("dropped Windows paths become WSL paths", DroppedPathsBecomeWslPaths)
 };
 
 var failures = new List<string>();
@@ -293,4 +294,41 @@ static void Assert(bool condition, string message)
 {
     if (!condition)
         throw new InvalidOperationException(message);
+}
+
+static void DroppedPathsBecomeWslPaths()
+{
+    Assert(WslPath.SharePath(@"C:\Users\me\a.png", "Ubuntu") is null, "drive paths must use wslpath, not an assumed mount root");
+    Assert(WslPath.SharePath(@"\\wsl.localhost\Ubuntu\home\me\x", "Ubuntu") == "/home/me/x", "WSL share path was not converted");
+    Assert(WslPath.SharePath(@"\\wsl$\Ubuntu", "Ubuntu") == "/", "WSL share root was not converted");
+    try { WslPath.SharePath(@"\\wsl$\Debian\home\me", "Ubuntu"); throw new Exception("cross-distribution path was accepted"); }
+    catch (System.IO.IOException) { }
+    Assert(WslPath.Quote("/mnt/c/My Files/a (1).png") == "'/mnt/c/My Files/a (1).png'", "shell path was not quoted");
+    Assert(WslPath.Quote("/home/me/a'b;$x!.png") == "'/home/me/a'\\''b;$x!.png'", "POSIX apostrophe escaping failed");
+    Assert(ShellPath.Windows(@"C:\a&b $x!'c.png", true) == @"'C:\a&b $x!''c.png'", "PowerShell path was not literal");
+    Assert(ShellPath.Windows(@"C:\%PATH% & a!.png", false) == "\"C:\\%" + ShellPath.PercentVariable + "%PATH%" + ShellPath.PercentVariable + "% & a!.png\"", "CMD percent/path escaping failed");
+    try { WslPath.Quote("/tmp/a\ncommand"); throw new Exception("control characters accepted"); } catch (ArgumentException) { }
+    var original = new System.Collections.Hashtable { ["COLORTERM"]="old", ["WSLENV"]="KEEP/p:COLORTERM/w:TERM_PROGRAM/l", ["KEEP"]="value" };
+    var env = TerminalEnvironment.Create(original);
+    Assert(env["COLORTERM"]=="truecolor" && env["TERM_PROGRAM"]=="RtlTerminal" && env["WSLENV"]=="KEEP/p:COLORTERM:TERM_PROGRAM", "terminal capability forwarding is incorrect");
+    Assert((string)original["COLORTERM"]! == "old", "parent environment was mutated");
+    if (OperatingSystem.IsWindows())
+    {
+        const string path = @"C:\a&b $x!'c %RTL_TEST_TOKEN% (1)^.png";
+        var cmd = new System.Diagnostics.ProcessStartInfo("cmd.exe", "/D /Q /V:OFF /C echo " + ShellPath.Windows(path, false))
+        { UseShellExecute=false, CreateNoWindow=true, RedirectStandardOutput=true, RedirectStandardError=true };
+        cmd.Environment[ShellPath.PercentVariable]="%";cmd.Environment["RTL_TEST_TOKEN"]="UNEXPECTED_EXPANSION";
+        using(var process=System.Diagnostics.Process.Start(cmd)!)
+        {
+            var value=process.StandardOutput.ReadToEnd().TrimEnd('\r','\n');process.WaitForExit();
+            Assert(process.ExitCode==0 && value=="\""+path+"\"", "CMD did not round-trip special-character path literally");
+        }
+        var ps = new System.Diagnostics.ProcessStartInfo("powershell.exe") { UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true };
+        foreach(var arg in new[]{"-NoProfile","-NonInteractive","-Command","& { param($p) [Console]::Write($p) } " + ShellPath.Windows(path,true)})ps.ArgumentList.Add(arg);
+        using(var process=System.Diagnostics.Process.Start(ps)!)
+        {
+            var value=process.StandardOutput.ReadToEnd();process.WaitForExit();
+            Assert(process.ExitCode==0 && value==path,"PowerShell did not round-trip special-character path literally");
+        }
+    }
 }

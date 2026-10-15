@@ -33,7 +33,7 @@ internal static class ConPtyPersianProbe
                     SetHandleInformation(input, 1, 1); SetHandleInformation(handle, 1, 1);
                     SetStdHandle(-10, input); SetStdHandle(-11, handle); SetStdHandle(-12, handle);
                     var info = shellLaunch
-                        ? new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "cmd.exe"), "/D /Q /K \"prompt $G\"") { UseShellExecute = false }
+                        ? new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "cmd.exe"), "/D /Q /V:OFF /K \"prompt $G\"") { UseShellExecute = false }
                         : new ProcessStartInfo(args[launch + 1], "--no-alt-screen") { UseShellExecute = false, WorkingDirectory = args[launch + 2] };
                     info.Environment["TERM"] = "xterm-256color";
                     using var process = Process.Start(info)!;
@@ -55,13 +55,15 @@ internal static class ConPtyPersianProbe
             Write("\x1b[2;1H\x1b[31mمی‌دارم\x1b[0m فاصله");
             Thread.Sleep(100);
             // ZWNJ also must not shift the position of the following word.
-            Write("\x1b[2;8Hفاصله\x1b[3;1HREADY");
+            Write("\x1b[2;8Hفاصله\x1b[4;1HENV:" + Environment.GetEnvironmentVariable("COLORTERM") + "|" + Environment.GetEnvironmentVariable("TERM_PROGRAM") + "|" + Environment.GetEnvironmentVariable(ShellPath.PercentVariable) + "\x1b[3;1HREADY");
         }
         finally { CloseHandle(handle); }
     }
 
     public static TerminalSnapshot Run()
     {
+        var parentColor = Environment.GetEnvironmentVariable("COLORTERM");
+        var parentWslEnv = Environment.GetEnvironmentVariable("WSLENV");
         using var session = new ConPtySession(110, 20);
         using var ready = new ManualResetEventSlim();
         var output = new StringBuilder();
@@ -118,6 +120,8 @@ internal static class ConPtyPersianProbe
         File.WriteAllText("bin/render-checks/conpty-persian-raw.txt", raw);
         var result = buffer.CaptureSnapshot();
         var text = string.Join("\n", result.Lines.Select(line => string.Concat(line.Runs.Select(run => run.Text))));
+        if (codex < 0 && (!text.Contains("ENV:truecolor|RtlTerminal|%") || Environment.GetEnvironmentVariable("COLORTERM") != parentColor || Environment.GetEnvironmentVariable("WSLENV") != parentWslEnv))
+            throw new Exception("Child terminal environment was not isolated and advertised correctly");
         if (!completed || !text.Contains("پروژهٔ قدیمی") || !text.Contains("محدودهٔ تغییرات"))
             throw new Exception("ConPTY corrupted Persian marks or word separators: " + text);
         if (codex < 0 && !text.Contains("می‌دارم فاصله")) throw new Exception("ZWNJ changed the native cursor column: " + text);

@@ -150,19 +150,22 @@ private const int PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = 0x00020016;
 
 
 
+
         var command = new StringBuilder(commandLine);
 
 
 
-        var success = CreateProcess(null, command, IntPtr.Zero, IntPtr.Zero, false,
-            EXTENDED_STARTUPINFO_PRESENT, IntPtr.Zero, workingDirectory,
-            ref startupInfo, out _processInfo);
-
-        if (!success)
-
-            throw new Win32Exception(Marshal.GetLastWin32Error());
-
+        var environment = Marshal.StringToHGlobalUni(TerminalEnvironment.Block());
+        try
+        {
+            var success = CreateProcess(null, command, IntPtr.Zero, IntPtr.Zero, false,
+                EXTENDED_STARTUPINFO_PRESENT | 0x00000400, environment, workingDirectory,
+                ref startupInfo, out _processInfo);
+            if (!success) throw new Win32Exception(Marshal.GetLastWin32Error());
+        }
+        finally { Marshal.FreeHGlobal(environment); }
     }
+
 
     public int Read(byte[] buffer)
 

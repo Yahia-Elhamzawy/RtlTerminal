@@ -22,6 +22,7 @@ internal static partial class Program
         object? Call(string name, params object?[] args) => typeof(MainWindow).GetMethods(flags | BindingFlags.DeclaredOnly).Single(method => method.Name == name && method.GetParameters().Length == args.Length).Invoke(window, args);
         object? Get(object owner, string property) => owner.GetType().GetProperty(property)!.GetValue(owner);
         void Set(object owner, string property, object? value) => owner.GetType().GetProperty(property)!.SetValue(owner, value);
+        Call("ApplyFontSettings",new TerminalFontSettings("Consolas",18,false,false));
         object NewTab()
         {
             var pane = Call("CreatePane", Enum.ToObject(profileType, 0))!;

@@ -62,6 +62,58 @@ public partial class MainWindow : Window
 ApplySavedFontSettings();
         UpdateThemeMenu();
         UpdateFontMetrics();
+        AllowDrop = true;
+        PreviewDragOver += Window_PreviewDragOver;
+        PreviewDrop += Window_PreviewDrop;
+    }
+
+    private static TerminalPane? FindDropPane(DependencyObject? source)
+    {
+        while (source is not null)
+        {
+            if (source is TerminalView { Tag: TerminalPane pane }) return pane;
+            source = source is Visual or System.Windows.Media.Media3D.Visual3D
+                ? VisualTreeHelper.GetParent(source) : LogicalTreeHelper.GetParent(source);
+        }
+        return null;
+    }
+
+    private void Window_PreviewDragOver(object sender, DragEventArgs e)
+    {
+        var pane = FindDropPane(e.OriginalSource as DependencyObject);
+        e.Effects = pane is { IsShown: true, Session: not null } && IsSupportedDrop(e.Data)
+            ? e.AllowedEffects & DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private async void Window_PreviewDrop(object sender, DragEventArgs e)
+    {
+        e.Handled = true;
+        var pane = FindDropPane(e.OriginalSource as DependencyObject);
+        if (pane is not { IsShown: true, Session: not null }) return;
+        Activate(); ActivatePane(pane);
+        try { await DropIntoPaneAsync(pane, e.Data); }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
+            System.Runtime.InteropServices.COMException or ArgumentException or NotSupportedException or System.ComponentModel.Win32Exception)
+        { MessageBox.Show(this, exception.Message, "Drop", MessageBoxButton.OK, MessageBoxImage.Error); }
+        if (ReferenceEquals(ActivePane, pane)) pane.View.Focus();
+    }
+
+    private async Task DropIntoPaneAsync(TerminalPane pane, IDataObject data)
+    {
+        // Read IDataObject on the UI thread before awaiting; preserve this pane across conversion.
+        if (data.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
+            await WriteClipboardPathsAsync(pane, files.Where(f => !string.IsNullOrWhiteSpace(f)).ToArray());
+        else if (data.GetDataPresent(DataFormats.Bitmap) && data.GetData(DataFormats.Bitmap) is BitmapSource bitmap)
+            await WriteClipboardPathsAsync(pane, [SaveTemporaryImage(bitmap)]);
+        else if (data.GetData(DataFormats.UnicodeText) is string text && text.Length > 0)
+            WritePanePaste(pane, text.Replace("\r\n", "\r").Replace("\n", "\r"));
+    }
+
+    private static bool IsSupportedDrop(IDataObject data)
+    {
+        try { return data.GetDataPresent(DataFormats.FileDrop) || data.GetDataPresent(DataFormats.Bitmap) || data.GetDataPresent(DataFormats.UnicodeText); }
+        catch (System.Runtime.InteropServices.COMException) { return false; }
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -140,6 +192,7 @@ ApplySavedFontSettings();
     {
         var startupDirectory = ResolveStartupDirectory(
             requestedStartupDirectory);
+        pane.WslDistribution = pane.Profile == TerminalProfile.Wsl ? WslPathResolver.DefaultDistribution() : null;
         PaneHost.UpdateLayout();
 
         try
@@ -154,7 +207,7 @@ ApplySavedFontSettings();
             pane.CancellationTokenSource = new CancellationTokenSource();
             pane.Session = new ConPtySession(columns, rows);
             pane.Session.Start(
-                GetProfileCommand(pane.Profile, showIntroduction),
+                GetProfileCommand(pane.Profile, showIntroduction, pane.WslDistribution),
                 startupDirectory);
 
             if (pane.Profile == TerminalProfile.CommandPrompt &&
@@ -1113,7 +1166,9 @@ ApplySavedFontSettings();
             _ => "Command Prompt"
         };
 
-    private static string GetProfileCommand(TerminalProfile profile, bool showIntroduction = true) =>
+    private static string GetProfileCommand(TerminalProfile profile, bool showIntroduction = true, string? wslDistribution = null)
+    {
+        var command =
         !showIntroduction ? profile switch
         {
             TerminalProfile.PowerShell => @"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoLogo -NoExit",
@@ -1121,7 +1176,7 @@ ApplySavedFontSettings();
                 """
                 C:\Windows\System32\wsl.exe --exec sh -lc "exec \"${SHELL:-/bin/bash}\" -l"
                 """,
-            _ => @"C:\Windows\System32\cmd.exe /D /Q /K ""chcp 65001>nul"""
+            _ => @"C:\Windows\System32\cmd.exe /D /Q /V:OFF /K ""chcp 65001>nul"""
         } : (profile switch
         {
             TerminalProfile.PowerShell =>
@@ -1134,9 +1189,13 @@ ApplySavedFontSettings();
                 """,
             _ =>
                 """
-                C:\Windows\System32\cmd.exe /D /Q /K "chcp 65001>nul & echo +--------------------------------------------------------+& echo ^| RtlTerminal v{APP_VERSION}                                     ^|& echo ^|                                                        ^|& echo ^| Author : Behnam Tajadini                               ^|& echo ^| Source : github.com/mirbehnam/RtlTerminal              ^|& echo ^| YouTube: @aka_techno                                   ^|& echo +--------------------------------------------------------+& echo.& echo   پشتیبانی کامل از زبان فارسی و راست‌به‌چپ& echo."
+                C:\Windows\System32\cmd.exe /D /Q /V:OFF /K "chcp 65001>nul & echo +--------------------------------------------------------+& echo ^| RtlTerminal v{APP_VERSION}                                     ^|& echo ^|                                                        ^|& echo ^| Author : Behnam Tajadini                               ^|& echo ^| Source : github.com/mirbehnam/RtlTerminal              ^|& echo ^| YouTube: @aka_techno                                   ^|& echo +--------------------------------------------------------+& echo.& echo   پشتیبانی کامل از زبان فارسی و راست‌به‌چپ& echo."
                 """
         }).Replace("{APP_VERSION}", AppVersion.Display);
+        if (profile == TerminalProfile.Wsl && !string.IsNullOrWhiteSpace(wslDistribution))
+            command = command.Replace("wsl.exe --exec", "wsl.exe --distribution " + ShellPath.WindowsArgument(wslDistribution) + " --exec");
+        return command;
+    }
 
     private static bool IsWslAvailable()
     {
@@ -1883,96 +1942,66 @@ ApplySavedFontSettings();
         }
     }
 
-    private void PasteClipboard()
+    private async void PasteClipboard()
     {
-        try { PasteClipboardCore(); }
+        try { await PasteClipboardCoreAsync(); }
         catch (System.Runtime.InteropServices.ExternalException)
         {
             MessageBox.Show(this, "The clipboard is busy. Please try pasting again.", "Clipboard", MessageBoxButton.OK, MessageBoxImage.Information);
         }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or System.ComponentModel.Win32Exception)
+        { MessageBox.Show(this, exception.Message, "Paste", MessageBoxButton.OK, MessageBoxImage.Error); }
     }
 
-    private void PasteClipboardCore()
+    private async Task PasteClipboardCoreAsync()
     {
-        if (ActiveSession is null)
-            return;
-
+        var pane = ActivePane;
+        if (pane?.Session is null) return;
         if (Clipboard.ContainsFileDropList())
         {
-            var fileDropList = Clipboard.GetFileDropList();
-            var paths = new List<string>(fileDropList.Count);
-
-            for (var index = 0; index < fileDropList.Count; index++)
-            {
-                if (!string.IsNullOrWhiteSpace(fileDropList[index]))
-                    paths.Add(fileDropList[index]!);
-            }
-
-            WriteClipboardPaths(paths);
-            return;
+            var paths = Clipboard.GetFileDropList().Cast<string>().Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
+            await WriteClipboardPathsAsync(pane, paths);
         }
-
-        if (Clipboard.ContainsImage())
+        else if (Clipboard.ContainsImage())
         {
             var imagePath = SaveClipboardImage();
-
-            if (imagePath is not null)
-                WriteClipboardPaths([imagePath]);
-
-            return;
+            if (imagePath is not null) await WriteClipboardPathsAsync(pane, [imagePath]);
         }
-
-        if (!Clipboard.ContainsText())
-            return;
-
-        var text = Clipboard.GetText()
-            .Replace("\r\n", "\r")
-            .Replace("\n", "\r");
-
-        WritePastedText(text);
+        else if (Clipboard.ContainsText())
+            WritePanePaste(pane, Clipboard.GetText().Replace("\r\n", "\r").Replace("\n", "\r"));
     }
 
-    private void WriteClipboardPaths(IReadOnlyList<string> paths)
+    private async Task WriteClipboardPathsAsync(TerminalPane pane, IReadOnlyList<string> paths)
     {
-        if (ActiveSession is null || paths.Count == 0)
-            return;
-
-        var formattedPaths = new StringBuilder();
-
+        if (pane.Session is null || paths.Count == 0) return;
+        var formatted = new List<string>();
         foreach (var path in paths)
         {
-            if (formattedPaths.Length > 0)
-                formattedPaths.Append(' ');
-
-            formattedPaths.Append(FormatClipboardPath(path));
+            ShellPath.Validate(path);
+            var fullPath = Path.GetFullPath(path);
+            formatted.Add(pane.Profile == TerminalProfile.Wsl
+                ? WslPath.Quote(await WslPathResolver.ConvertAsync(fullPath, pane.WslDistribution))
+                : ShellPath.Windows(fullPath, pane.Profile == TerminalProfile.PowerShell, escapePercent: pane.LastRenderedSnapshot?.Modes.BracketedPaste != true));
         }
-
-        WritePastedText(formattedPaths.ToString());
+        // Conversion is atomic: no partial paste if any file cannot be resolved.
+        WritePanePaste(pane, string.Join(" ", formatted));
     }
 
-    private void WritePastedText(string text)
+    private static void WritePanePaste(TerminalPane pane, string text)
     {
-        if (ActiveSession is null || string.IsNullOrEmpty(text))
-            return;
-
-        if (ActiveSnapshot?.Modes.BracketedPaste == true)
-            ActiveSession.Write($"\x1b[200~{text}\x1b[201~");
-        else
-            ActiveSession.Write(text);
-    }
-
-    private string FormatClipboardPath(string path)
-    {
-        return Path.GetFullPath(path);
+        if (pane.Session is not { } session || string.IsNullOrEmpty(text)) return;
+        session.Write(pane.LastRenderedSnapshot?.Modes.BracketedPaste == true ? $"\x1b[200~{text}\x1b[201~" : text);
     }
 
     private string? SaveClipboardImage()
     {
         var image = Clipboard.GetImage();
 
-        if (image is null)
-            return null;
+        return image is null ? null : SaveTemporaryImage(image);
+    }
 
+    private string SaveTemporaryImage(BitmapSource image)
+    {
         var directory = Path.Combine(
             Path.GetTempPath(),
             "RtlTerminal",
@@ -2307,6 +2336,7 @@ ApplySavedFontSettings();
         public TerminalView View { get; set; } = null!;
         public Border Frame { get; } = new();
         public bool IsShown { get; set; }
+        public string? WslDistribution { get; set; }
         public ConPtySession? Session { get; set; }
         public TerminalBuffer? Buffer { get; set; }
         public CancellationTokenSource? CancellationTokenSource { get; set; }

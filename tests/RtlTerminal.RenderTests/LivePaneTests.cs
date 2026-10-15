@@ -13,7 +13,7 @@ internal static partial class Program
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
         var window = new MainWindow();
         var tabs = (IList)typeof(MainWindow).GetField("_tabs", flags)!.GetValue(window)!;
-        object? Call(string name, params object?[] args) => typeof(MainWindow).GetMethods(flags)
+        object? Call(string name, params object?[] args) => typeof(MainWindow).GetMethods(flags | BindingFlags.Static)
             .Single(m => m.Name == name && m.GetParameters().Length == args.Length).Invoke(window,args);
         object? Get(object o,string p) => o.GetType().GetProperty(p)!.GetValue(o);
         void Set(object o,string p,object? v) => o.GetType().GetProperty(p)!.SetValue(o,v);
@@ -60,7 +60,23 @@ internal static partial class Program
             if(Text(panes[0]).Contains("BETA_AFTER_JOIN")||Text(panes[1]).Contains("ALPHA_AFTER_JOIN") ||
                !ReferenceEquals(Get(panes[0],"Session"),sessions[0]) || !ReferenceEquals(Get(panes[1],"Session"),sessions[1]))
                 throw new Exception("Joining crossed shell input/output or replaced a running session");
-            Console.WriteLine("PASS two real ConPTY shells retain independent input/output before and after joining tabs");
+            var targetView=(TerminalView)Get(panes[0],"View")!;
+            if(!ReferenceEquals(Call("FindDropPane",targetView),panes[0]))throw new Exception("Drop hit testing selected the wrong pane");
+            var drop=new DataObject(DataFormats.UnicodeText,"echo DROP_TARGET_ONLY\r");
+            ((Task)Call("DropIntoPaneAsync",panes[0],drop)!).GetAwaiter().GetResult();
+            WaitFor(()=>Text(panes[0]).Contains("DROP_TARGET_ONLY"));
+            if(Text(panes[1]).Contains("DROP_TARGET_ONLY"))throw new Exception("A drop was sent to the active pane instead of its target");
+            var path=Path.Combine(Environment.CurrentDirectory,"test & file %RTL_DROP_TOKEN%!.png");
+            sessions[0].Write("echo ");
+            ((Task)Call("DropIntoPaneAsync",panes[0],new DataObject(DataFormats.FileDrop,new[]{path}))!).GetAwaiter().GetResult();
+            sessions[0].Write("\r");WaitFor(()=>Text(panes[0]).Contains("%RTL_DROP_TOKEN%!"));
+            var image=System.Windows.Media.Imaging.BitmapSource.Create(1,1,96,96,System.Windows.Media.PixelFormats.Bgra32,null,new byte[]{0,0,255,255},4);
+            sessions[0].Write("echo ");
+            ((Task)Call("DropIntoPaneAsync",panes[0],new DataObject(DataFormats.Bitmap,image))!).GetAwaiter().GetResult();
+            sessions[0].Write("\r");WaitFor(()=>Text(panes[0]).Contains("clipboard-"));
+            var images=(List<string>)typeof(MainWindow).GetField("_temporaryClipboardFiles",flags)!.GetValue(window)!;
+            if(images.Count!=1 || !File.Exists(images[0]))throw new Exception("Dropped image was not saved as a temporary PNG");
+            Console.WriteLine("PASS two live shells, target-pane text/file/image drops, literal paths and temporary image creation");
         }
         finally
         {

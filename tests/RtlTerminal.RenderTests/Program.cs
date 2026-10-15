@@ -19,6 +19,8 @@ internal static partial class Program
     }
     private static void Run()
     {
+        var wslProbe = Array.IndexOf(Environment.GetCommandLineArgs(), "--wsl-path-probe");
+        if (wslProbe >= 0) { WslPathProbe.Run(Environment.GetCommandLineArgs()[wslProbe + 1]); return; }
         if (Environment.GetCommandLineArgs().Contains("--screenshots"))
         {
             ScreenshotCapture.Run();

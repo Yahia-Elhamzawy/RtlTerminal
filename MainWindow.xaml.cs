@@ -34,6 +34,7 @@ public partial class MainWindow : Window
     private bool _restoringScrollPosition;
     private int _nextTabNumber = 1;
     private TerminalProfile _defaultProfile = TerminalProfile.CommandPrompt;
+    private string? _defaultWslDistribution;
     private int _historySize = 2000;
     private ColorScheme? _lastDarkScheme = AppTheme.IsLight ? null : AppTheme.Scheme;
     private PaneShortcutSettings _paneShortcuts = AppSettings.LoadPaneShortcuts();
@@ -58,6 +59,7 @@ public partial class MainWindow : Window
         _resizeTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(80) };
         _resizeTimer.Tick += (_, _) => { _resizeTimer.Stop(); ApplyViewportResize(); };
         _defaultProfile = LoadDefaultProfile();
+        _defaultWslDistribution = AppSettings.LoadWslDistribution() ?? WslProfiles.DefaultDistribution();
         _historySize = AppSettings.LoadHistorySize();
 ApplySavedFontSettings();
         UpdateThemeMenu();
@@ -130,9 +132,11 @@ ApplySavedFontSettings();
 
     private void CreateTerminalTab(
         TerminalProfile profile,
-        string? requestedStartupDirectory = null)
+        string? requestedStartupDirectory = null,
+        string? wslDistribution = null)
     {
         var pane = CreatePane(profile);
+        if (profile == TerminalProfile.Wsl) pane.WslDistribution = wslDistribution ?? _defaultWslDistribution;
         var tab = new TerminalTab(pane);
         _tabs.Add(tab);
         ShowTab(tab);
@@ -167,6 +171,7 @@ ApplySavedFontSettings();
     {
         StorePaneSizes();
         var pane = CreatePane(current.Profile);
+        pane.WslDistribution = current.WslDistribution;
         tab.LayoutRoot = tab.LayoutRoot.Replace(current,
             new PaneLayout(new PaneLayout(current), new PaneLayout(pane), direction == PaneSplitDirection.Stacked));
         tab.Panes.Insert(tab.Panes.IndexOf(current) + 1, pane);
@@ -192,7 +197,7 @@ ApplySavedFontSettings();
     {
         var startupDirectory = ResolveStartupDirectory(
             requestedStartupDirectory);
-        pane.WslDistribution = pane.Profile == TerminalProfile.Wsl ? WslPathResolver.DefaultDistribution() : null;
+        var wslDirectory = pane.Profile == TerminalProfile.Wsl ? ResolveWslStartupDirectory(requestedStartupDirectory) : null;
         PaneHost.UpdateLayout();
 
         try
@@ -207,8 +212,8 @@ ApplySavedFontSettings();
             pane.CancellationTokenSource = new CancellationTokenSource();
             pane.Session = new ConPtySession(columns, rows);
             pane.Session.Start(
-                GetProfileCommand(pane.Profile, showIntroduction, pane.WslDistribution),
-                startupDirectory);
+                GetProfileCommand(pane.Profile, showIntroduction, pane.WslDistribution, wslDirectory),
+                pane.Profile == TerminalProfile.Wsl ? wslDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) : startupDirectory);
 
             if (pane.Profile == TerminalProfile.CommandPrompt &&
                 startupDirectory is not null)
@@ -363,36 +368,41 @@ ApplySavedFontSettings();
 
     private void ProfileMenuButton_Click(object sender, RoutedEventArgs e)
     {
-        var menu = new ContextMenu
-        {
-            Style = (Style)FindResource("DarkContextMenuStyle")
-        };
+        var menu = CreateProfileMenu();
+        menu.PlacementTarget = sender as UIElement;
+        menu.IsOpen = true;
+    }
 
+    private ContextMenu CreateProfileMenu()
+    {
+        var menu = new ContextMenu { Style = (Style)FindResource("DarkContextMenuStyle") };
         AddProfileMenuItem(menu, "Command Prompt", TerminalProfile.CommandPrompt);
         AddProfileMenuItem(menu, "PowerShell", TerminalProfile.PowerShell);
 
         if (IsWslAvailable())
-            AddProfileMenuItem(menu, "WSL", TerminalProfile.Wsl);
-
-        menu.PlacementTarget = sender as UIElement;
-        menu.IsOpen = true;
+            foreach (var distribution in WslProfiles.Discover())
+                AddProfileMenuItem(menu, distribution, TerminalProfile.Wsl, distribution);
+        return menu;
     }
 
     private void AddProfileMenuItem(
         ItemsControl menu,
         string header,
-        TerminalProfile profile)
+        TerminalProfile profile,
+        string? wslDistribution = null)
     {
-        var item = new MenuItem { Header = header };
-        item.Click += (_, _) => SelectTerminalProfile(profile);
+        var item = new MenuItem { Header = new TextBlock { Text = header } };
+        item.Click += (_, _) => SelectTerminalProfile(profile, wslDistribution);
         menu.Items.Add(item);
     }
 
-    private void SelectTerminalProfile(TerminalProfile profile)
+    private void SelectTerminalProfile(TerminalProfile profile, string? wslDistribution = null)
     {
         _defaultProfile = profile;
+        _defaultWslDistribution = profile == TerminalProfile.Wsl ? wslDistribution : _defaultWslDistribution;
         AppSettings.SaveTerminalProfile(profile.ToString());
-        CreateTerminalTab(profile);
+        if (profile == TerminalProfile.Wsl) AppSettings.SaveWslDistribution(wslDistribution);
+        CreateTerminalTab(profile, wslDistribution: wslDistribution);
     }
 
     private void MinimizeButton_Click(object sender, RoutedEventArgs e)
@@ -1113,6 +1123,13 @@ ApplySavedFontSettings();
         _updatingContextMenuItem = false;
     }
 
+    private static string? ResolveWslStartupDirectory(string? requestedDirectory)
+    {
+        if (TryResolveDirectory(requestedDirectory, out var directory)) return directory;
+        var arguments = Environment.GetCommandLineArgs();
+        return arguments.Length >= 2 && TryResolveDirectory(arguments[1], out directory) ? directory : null;
+    }
+
     private static string? ResolveStartupDirectory(
         string? requestedDirectory = null)
     {
@@ -1166,16 +1183,14 @@ ApplySavedFontSettings();
             _ => "Command Prompt"
         };
 
-    private static string GetProfileCommand(TerminalProfile profile, bool showIntroduction = true, string? wslDistribution = null)
+    private static string GetProfileCommand(TerminalProfile profile, bool showIntroduction = true, string? wslDistribution = null, string? wslDirectory = null)
     {
+        if (profile == TerminalProfile.Wsl) return WslProfiles.CommandLine(wslDistribution, wslDirectory);
+        const string powerShellDirectoryPrompt = "$global:__RtlOriginalPrompt=$function:prompt; function global:prompt { [Console]::Write(([char]27).ToString()+']9;9;'+$executionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath+[char]7); & $global:__RtlOriginalPrompt }; ";
         var command =
         !showIntroduction ? profile switch
         {
-            TerminalProfile.PowerShell => @"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoLogo -NoExit",
-            TerminalProfile.Wsl =>
-                """
-                C:\Windows\System32\wsl.exe --exec sh -lc "exec \"${SHELL:-/bin/bash}\" -l"
-                """,
+            TerminalProfile.PowerShell => @"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoLogo -NoExit -Command """ + powerShellDirectoryPrompt + "\"",
             _ => @"C:\Windows\System32\cmd.exe /D /Q /V:OFF /K ""chcp 65001>nul"""
         } : (profile switch
         {
@@ -1183,26 +1198,17 @@ ApplySavedFontSettings();
                 """
                 C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoLogo -NoExit -Command "$lines=@('+--------------------------------------------------------+','| RtlTerminal v{APP_VERSION}                                     |','|                                                        |','| Author : Behnam Tajadini                               |','| Source : github.com/mirbehnam/RtlTerminal              |','| YouTube: @aka_techno                                   |','+--------------------------------------------------------+','','  پشتیبانی کامل از زبان فارسی و راست‌به‌چپ',''); $lines | ForEach-Object { Write-Host $_ }"
                 """,
-            TerminalProfile.Wsl =>
-                """
-                C:\Windows\System32\wsl.exe --exec sh -lc "printf '%s\n' '+--------------------------------------------------------+' '| RtlTerminal v{APP_VERSION}                                     |' '|                                                        |' '| Author : Behnam Tajadini                               |' '| Source : github.com/mirbehnam/RtlTerminal              |' '| YouTube: @aka_techno                                   |' '+--------------------------------------------------------+' '' '  پشتیبانی کامل از زبان فارسی و راست‌به‌چپ' ''; exec \"${SHELL:-/bin/bash}\" -l"
-                """,
             _ =>
                 """
                 C:\Windows\System32\cmd.exe /D /Q /V:OFF /K "chcp 65001>nul & echo +--------------------------------------------------------+& echo ^| RtlTerminal v{APP_VERSION}                                     ^|& echo ^|                                                        ^|& echo ^| Author : Behnam Tajadini                               ^|& echo ^| Source : github.com/mirbehnam/RtlTerminal              ^|& echo ^| YouTube: @aka_techno                                   ^|& echo +--------------------------------------------------------+& echo.& echo   پشتیبانی کامل از زبان فارسی و راست‌به‌چپ& echo."
                 """
         }).Replace("{APP_VERSION}", AppVersion.Display);
-        if (profile == TerminalProfile.Wsl && !string.IsNullOrWhiteSpace(wslDistribution))
-            command = command.Replace("wsl.exe --exec", "wsl.exe --distribution " + ShellPath.WindowsArgument(wslDistribution) + " --exec");
+        if (profile == TerminalProfile.PowerShell && showIntroduction)
+            command = command.Replace("-Command \"", "-Command \"" + powerShellDirectoryPrompt);
         return command;
     }
 
-    private static bool IsWslAvailable()
-    {
-        var windowsDirectory =
-            Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-        return File.Exists(Path.Combine(windowsDirectory, "System32", "wsl.exe"));
-    }
+    private static bool IsWslAvailable() => WslProfiles.IsAvailable;
 
     private static TerminalProfile LoadDefaultProfile()
     {
@@ -1219,6 +1225,43 @@ ApplySavedFontSettings();
     }
 
     private TerminalPane? ActivePane => _activeTab?.ActivePane;
+
+    private TerminalPane? ExplorerTargetPane() => _activeTab is not { } tab ? null :
+        tab.Panes.Contains(tab.ActivePane) ? tab.ActivePane : tab.Panes.MaxBy(pane => pane.Number);
+
+    private async Task<string?> ReadExplorerDirectoryAsync(TerminalPane pane)
+    {
+        var reported = TerminalDirectory.FromReport(pane.Buffer?.CaptureSnapshot().WorkingDirectory, pane.WslDistribution);
+        if (pane.Profile == TerminalProfile.Wsl)
+        {
+            var current = pane.Session is { } session
+                ? await TerminalDirectory.ReadWslAsync(session.SessionId, pane.WslDistribution) : null;
+            return current ?? reported;
+        }
+        return reported ?? pane.Session?.ReadWorkingDirectory();
+    }
+
+    private async void OpenDirectoryMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        var pane = ExplorerTargetPane();
+        if (pane is null) return;
+        OpenDirectoryMenuItem.IsEnabled = false;
+        try
+        {
+            var directory = await ReadExplorerDirectoryAsync(pane);
+            if (directory is null || !await Task.Run(() => Directory.Exists(directory)))
+                throw new IOException("The current directory is unavailable. Return to the shell prompt and try again.");
+            Process.Start(new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"))
+            {
+                Arguments = ShellPath.WindowsArgument(directory), UseShellExecute = true
+            });
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or System.ComponentModel.Win32Exception)
+        {
+            MessageBox.Show(this, exception.Message, "Open directory", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        finally { OpenDirectoryMenuItem.IsEnabled = true; }
+    }
     private TerminalView ActiveView => ActivePane?.View ?? TerminalTextBox;
     private ConPtySession? ActiveSession => ActivePane?.Session;
     private TerminalBuffer? ActiveBuffer => ActivePane?.Buffer;
@@ -2332,7 +2375,7 @@ ApplySavedFontSettings();
 
         public int Number { get; } = number;
         public TerminalProfile Profile { get; } = profile;
-        public string Title { get; } = $"{profileTitle} {number}";
+        public string Title => $"{(Profile == TerminalProfile.Wsl ? WslDistribution ?? profileTitle : profileTitle)} {Number}";
         public TerminalView View { get; set; } = null!;
         public Border Frame { get; } = new();
         public bool IsShown { get; set; }

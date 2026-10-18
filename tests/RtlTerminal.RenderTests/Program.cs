@@ -21,6 +21,8 @@ internal static partial class Program
     {
         var wslProbe = Array.IndexOf(Environment.GetCommandLineArgs(), "--wsl-path-probe");
         if (wslProbe >= 0) { WslPathProbe.Run(Environment.GetCommandLineArgs()[wslProbe + 1]); return; }
+        var wslLaunchProbe = Array.IndexOf(Environment.GetCommandLineArgs(), "--wsl-launch-probe");
+        if (wslLaunchProbe >= 0) { WslLaunchProbe.Run(Environment.GetCommandLineArgs()[wslLaunchProbe + 1]); return; }
         if (Environment.GetCommandLineArgs().Contains("--screenshots"))
         {
             ScreenshotCapture.Run();
@@ -98,6 +100,8 @@ internal static partial class Program
         CheckAutomaticSplit();
         CheckSchemesAcrossPanes();
         CheckThemeSettingsPreview();
+        CheckWslProfiles();
+        CheckExplorerDirectories();
         CheckLivePaneSessions();
         Render(new TerminalView { Width = 800, Height = 420, FontFamily = new FontFamily("Consolas"), FontSize = 18, Background = Brushes.Black }, ConPtyPersianProbe.Run(), "native-persian.png");
     }

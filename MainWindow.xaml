@@ -514,6 +514,10 @@
               Foreground="{DynamicResource ChromeForegroundBrush}"
               ItemContainerStyle="{StaticResource DarkTopLevelMenuItemStyle}">
             <MenuItem Header="_File">
+                <MenuItem x:Name="OpenDirectoryMenuItem"
+                          Header="_Open current directory in Explorer"
+                          Click="OpenDirectoryMenuItem_Click" />
+                <Separator />
                 <MenuItem x:Name="LastDirectoriesMenuItem"
                           Header="_Last directories"
                           SubmenuOpened="LastDirectoriesMenuItem_SubmenuOpened">

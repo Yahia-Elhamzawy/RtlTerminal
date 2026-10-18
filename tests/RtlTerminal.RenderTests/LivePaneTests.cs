@@ -32,13 +32,16 @@ internal static partial class Program
             var panes = new List<object>();
             for(var i=0;i<2;i++)
             {
-                var pane=Call("CreatePane",Enum.ToObject(profileType,0))!;
+                var profile=Enum.ToObject(profileType,i); // CMD, then PowerShell.
+                var pane=Call("CreatePane",profile)!;
                 var tab=Activator.CreateInstance(tabType,pane)!; tabs.Add(tab); panes.Add(pane);
                 Call("ShowTab",tab); Pump();
                 var session=new ConPtySession(80,20); sessions.Add(session);
                 Set(pane,"Session",session); Set(pane,"Buffer",new TerminalBuffer(80,20));
                 Set(pane,"CancellationTokenSource",new CancellationTokenSource());
-                session.Start("dotnet \"" + typeof(ConPtyPersianProbe).Assembly.Location + "\" --conpty-child --shell-launch",Environment.CurrentDirectory);
+                // Launch directly, including from this test host with redirected
+                // stdio. The ConPTY connection must supply its own standard handles.
+                session.Start((string)Call("GetProfileCommand",profile,false,null,null)!,Environment.CurrentDirectory);
                 readers.Add(Task.Run(()=>Call("ReadOutputLoop",pane)));
             }
             string Text(object pane) => string.Concat(((TerminalBuffer)Get(pane,"Buffer")!).CaptureSnapshot().Lines.SelectMany(l=>l.Runs).Select(r=>r.Text));

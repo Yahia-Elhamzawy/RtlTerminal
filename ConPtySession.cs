@@ -19,6 +19,8 @@ namespace RtlTerminal;
 public sealed class ConPtySession : IDisposable
 
 {
+    public string SessionId { get; } = Guid.NewGuid().ToString("N");
+    public string? ReadWorkingDirectory() => ProcessDirectory.Read(_processInfo.hProcess);
 
     static ConPtySession()
     {
@@ -35,6 +37,7 @@ public sealed class ConPtySession : IDisposable
 
     private const uint PSEUDOCONSOLE_GLYPH_WIDTH_GRAPHEMES = 0x08;
     private const uint EXTENDED_STARTUPINFO_PRESENT = 0x00080000;
+    private const int STARTF_USESTDHANDLES = 0x00000100;
 
 private const int PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = 0x00020016;
 
@@ -107,6 +110,10 @@ private const int PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = 0x00020016;
         var startupInfo = new STARTUPINFOEX();
 
         startupInfo.StartupInfo.cb = Marshal.SizeOf<STARTUPINFOEX>();
+        // Match Windows Terminal: explicit null standard handles let the attached
+        // pseudoconsole supply them, instead of inheriting a launcher's redirected
+        // stdin/stdout/stderr (for example when started from another terminal).
+        startupInfo.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
 
 
 
@@ -155,7 +162,7 @@ private const int PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = 0x00020016;
 
 
 
-        var environment = Marshal.StringToHGlobalUni(TerminalEnvironment.Block());
+        var environment = Marshal.StringToHGlobalUni(TerminalEnvironment.Block(SessionId));
         try
         {
             var success = CreateProcess(null, command, IntPtr.Zero, IntPtr.Zero, false,

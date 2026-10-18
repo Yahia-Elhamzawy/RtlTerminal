@@ -56,10 +56,12 @@ public sealed record TerminalSnapshot(
     long Revision)
 {
     public int Columns { get; init; }
+    public string? WorkingDirectory { get; init; }
 }
 
 public sealed class TerminalBuffer
 {
+    private string? _workingDirectory;
     private const int DefaultMaximumScrollbackRows = 2000;
     internal static readonly TerminalColor[] AnsiColors =
     [
@@ -423,6 +425,14 @@ public sealed class TerminalBuffer
 
         switch (command)
         {
+            case 7:
+                if (Uri.TryCreate(value, UriKind.Absolute, out var location) && location.IsFile)
+                    _workingDirectory = value;
+                return;
+            case 9:
+                if (value.StartsWith("9;", StringComparison.Ordinal))
+                    _workingDirectory = value[2..].Trim('"');
+                return;
             case 4:
                 // OSC 4 normally contains a palette index before the query.
                 // It is handled below when that extended form is present.
@@ -1495,7 +1505,7 @@ public sealed class TerminalBuffer
                 _sgrMouse,
                 _synchronizedOutput),
             responses,
-            ++_revision) { Columns = _columns };
+            ++_revision) { Columns = _columns, WorkingDirectory = _workingDirectory };
     }
 
     private TerminalLine CreateLine(Cell[] cells, int cellLength, bool preserveTrailingSpaces)

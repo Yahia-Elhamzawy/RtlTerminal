@@ -1,19 +1,10 @@
 using System.Diagnostics;
 using System.IO;
-using Microsoft.Win32;
 
 namespace RtlTerminal;
 
 internal static class WslPathResolver
 {
-    public static string? DefaultDistribution()
-    {
-        using var lxss = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Lxss");
-        if (lxss?.GetValue("DefaultDistribution") is not string id) return null;
-        using var distro = lxss.OpenSubKey(id);
-        return distro?.GetValue("DistributionName") as string;
-    }
-
     public static async Task<string> ConvertAsync(string path, string? distribution)
     {
         if (string.IsNullOrWhiteSpace(distribution))

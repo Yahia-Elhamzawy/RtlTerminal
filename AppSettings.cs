@@ -28,6 +28,19 @@ public static class AppSettings
         key.SetValue("TerminalProfile", profile, RegistryValueKind.String);
     }
 
+    public static string? LoadWslDistribution()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(SettingsKey);
+        return key?.GetValue("WslDistribution") as string;
+    }
+
+    public static void SaveWslDistribution(string? distribution)
+    {
+        using var key = Registry.CurrentUser.CreateSubKey(SettingsKey);
+        if (string.IsNullOrWhiteSpace(distribution)) key.DeleteValue("WslDistribution", false);
+        else key.SetValue("WslDistribution", distribution, RegistryValueKind.String);
+    }
+
     public static IReadOnlyList<string> LoadLastCmdDirectories()
     {
         using var key = Registry.CurrentUser.OpenSubKey(SettingsKey);

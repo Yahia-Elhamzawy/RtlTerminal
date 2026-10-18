@@ -56,6 +56,7 @@ Rtl Terminal uses the Windows ConPTY API and works with command-line environment
 - Support ANSI standard colors, bright colors, dim text, 256 colors and RGB colors.
 - Run interactive CLI and TUI applications through Windows ConPTY.
 - Open multiple Command Prompt, PowerShell and WSL sessions in independent tabs.
+- Select each installed WSL distribution from the profile menu. WSL starts its own default shell in the home directory, as Windows Terminal does; splits retain the selected distribution. See [WSL behavior](docs/wsl-behavior.md).
 - Switch tabs with `Ctrl+Tab`, create a tab with `Ctrl+Shift+T` and close the active pane (or its last tab) with `Ctrl+Shift+W`.
 - Right-click a tab and choose **Split tab** to split that tab, or **Color...** to choose its background color (including a custom color or reset).
 - Split with `Ctrl+Shift+D` (side by side when wide enough, top and bottom when the selected pane is narrow); switch panes with `Ctrl+Shift+Left/Right`. Each pane shortcut can be disabled in Settings. `Ctrl+W` is passed to the terminal.
@@ -74,6 +75,7 @@ Rtl Terminal uses the Windows ConPTY API and works with command-line environment
 - Show recommended terminal and programming fonts when installed.
 - Optionally add **Open in RtlTerminal** to the Windows folder context menu.
 - Open a terminal directly in the selected folder.
+- Open the active pane's current directory in Explorer from File, including WSL directories. If no pane is selected, the last opened pane is used.
 - Remember whether new tabs should use Command Prompt, PowerShell or WSL.
 - Reopen one of the ten most recent Command Prompt directories from the File menu.
 - Export the retained content of the current terminal session to a UTF-8 text file.
@@ -310,6 +312,8 @@ No license file is currently included. Add a `LICENSE` file before accepting ext
 - پشتیبانی از رنگ‌های ANSI، رنگ‌های روشن، متن کم‌رنگ، ۲۵۶ رنگ و RGB
 - اجرای برنامه‌های CLI و TUI تعاملی
 - اجرای هم‌زمان Command Prompt، PowerShell و WSL در تب‌های مستقل
+- بازکردن پوشهٔ فعلی پنل انتخاب‌شده در اکسپلورر از منوی File، همراه با پشتیبانی از مسیرهای WSL و استفاده از آخرین پنل بازشده در نبود انتخاب
+- نمایش توزیع‌های نصب‌شدهٔ WSL در منوی ترمینال؛ اجرای شل پیش‌فرض خود توزیع از پوشهٔ خانه مانند Windows Terminal و حفظ همان توزیع هنگام اسپلیت
 - ساخت، جابه‌جایی و بستن تب‌ها با میان‌برهای صفحه‌کلید
 - پشتیبانی از progress bar و بازنویسی خروجی روی همان خط
 - رندر بهینه برای خروجی‌های طولانی agent‌های هوش مصنوعی
@@ -438,6 +442,7 @@ git push origin main
 - دعم ألوان ANSI والألوان الساطعة والنص الخافت و256 لوناً وألوان RGB
 - تشغيل تطبيقات CLI وTUI التفاعلية
 - تشغيل Command Prompt وPowerShell وWSL في علامات تبويب مستقلة
+- اختيار توزيعة WSL المثبتة من قائمة الملفات التعريفية؛ تشغيل صدفتها الافتراضية في المجلد الرئيسي كما في Windows Terminal، مع الاحتفاظ بالتوزيعة عند تقسيم الجزء
 - إنشاء علامات التبويب والتنقل بينها وإغلاقها باختصارات لوحة المفاتيح
 - دعم أشرطة التقدم وتحديث السطر نفسه
 - تصيير تدريجي سريع لمخرجات وكلاء الذكاء الاصطناعي الطويلة
@@ -454,6 +459,7 @@ git push origin main
 - عرض خطوط الطرفية والبرمجة المقترحة عند توفرها
 - إضافة خيار **Open in RtlTerminal** إلى قائمة المجلدات
 - فتح الطرفية مباشرة داخل المجلد المحدد
+- فتح المجلد الحالي للجزء المحدد في مستكشف الملفات من قائمة File، بما في ذلك مسارات WSL؛ وعند عدم تحديد جزء يُستخدم آخر جزء مفتوح
 - تذكّر CMD أو PowerShell أو WSL كبيئة افتراضية لعلامات التبويب الجديدة
 - فتح أحد آخر عشرة مجلدات CMD من قائمة File
 - تصدير محتوى الجلسة الحالية إلى ملف نصي UTF-8

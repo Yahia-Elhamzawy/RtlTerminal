@@ -7,11 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\AppVersion.cs" Link="AppVersion.cs" />
-    <Compile Include="..\..\TerminalBuffer.cs" Link="TerminalBuffer.cs" />
-    <Compile Include="..\..\SmartRtl.cs" Link="SmartRtl.cs" />
-    <Compile Include="..\..\WslPath.cs" Link="WslPath.cs" />
-    <Compile Include="..\..\ShellPath.cs" Link="ShellPath.cs" />
-    <Compile Include="..\..\TerminalEnvironment.cs" Link="TerminalEnvironment.cs" />
+    <Compile Include="../../src/RtlTerminal/AppVersion.cs" Link="AppVersion.cs" />
+    <Compile Include="../../src/RtlTerminal/Terminal/TerminalBuffer.cs" Link="TerminalBuffer.cs" />
+    <Compile Include="../../src/RtlTerminal/Terminal/SmartRtl.cs" Link="SmartRtl.cs" />
+    <Compile Include="../../src/RtlTerminal/Services/WslPath.cs" Link="WslPath.cs" />
+    <Compile Include="../../src/RtlTerminal/Services/ShellPath.cs" Link="ShellPath.cs" />
+    <Compile Include="../../src/RtlTerminal/Terminal/TerminalEnvironment.cs" Link="TerminalEnvironment.cs" />
   </ItemGroup>
 </Project>

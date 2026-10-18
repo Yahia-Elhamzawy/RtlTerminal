@@ -339,7 +339,7 @@ internal static partial class Program
             var bitmap = new RenderTargetBitmap(width, 80, 96, 96, PixelFormats.Pbgra32);
             bitmap.Render(root);
             var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
-            using var stream = File.Create($"bin/render-checks/header-{width}.png"); encoder.Save(stream);
+            using var stream = File.Create($"artifacts/render-checks/header-{width}.png"); encoder.Save(stream);
         }
         Console.WriteLine("PASS window header layout and persistent new-tab control with tab overflow");
     }
@@ -395,9 +395,9 @@ internal static partial class Program
         var pixels = new byte[bitmap.PixelWidth * bitmap.PixelHeight * 4]; bitmap.CopyPixels(pixels, bitmap.PixelWidth * 4, 0);
         if (!pixels.Where((_, i) => i % 4 != 3).Any(value => value > 40))
             throw new Exception("Renderer produced an empty image");
-        Directory.CreateDirectory("bin/render-checks");
+        Directory.CreateDirectory("artifacts/render-checks");
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        using var stream = File.Create("bin/render-checks/" + name); encoder.Save(stream);
+        using var stream = File.Create("artifacts/render-checks/" + name); encoder.Save(stream);
         return bitmap;
     }
 }

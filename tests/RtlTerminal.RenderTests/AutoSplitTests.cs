@@ -57,7 +57,7 @@ internal static partial class Program
         Call("Render",bottom,new TerminalBuffer(30,12).Process("Bottom / پنل پایین"));Layout();
         var bitmap=new RenderTargetBitmap(980,740,96,96,PixelFormats.Pbgra32);bitmap.Render(root);
         var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        using(var stream=File.Create("bin/render-checks/automatic-vertical-split.png"))encoder.Save(stream);
+        using(var stream=File.Create("artifacts/render-checks/automatic-vertical-split.png"))encoder.Save(stream);
         // The lower pane has neither enough width nor enough height for another split.
         if(Call("GetSplitDirection",bottom)!.ToString()!="None")throw new Exception("An unusably small pane still accepts another split");
         var otherPane=Call("CreatePane",Enum.ToObject(profile,0))!;

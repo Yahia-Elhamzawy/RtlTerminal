@@ -49,7 +49,7 @@ internal static partial class Program
                 if (watch.Elapsed > TimeSpan.FromSeconds(15)) throw new Exception("Shell did not report changed directory: " + Current(pane));
             }
         }
-        var root = Path.Combine(Environment.CurrentDirectory, "bin", "directory-probe-" + Guid.NewGuid().ToString("N"));
+        var root = Path.Combine(Environment.CurrentDirectory, "artifacts", "directory-probe-" + Guid.NewGuid().ToString("N"));
         var locations = new[] { Path.Combine(root, "CMD & فارسی"), Path.Combine(root, "PowerShell ' space") };
         foreach (var path in locations) Directory.CreateDirectory(path);
         try

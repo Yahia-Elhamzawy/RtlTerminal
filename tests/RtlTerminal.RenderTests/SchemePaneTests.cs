@@ -81,7 +81,7 @@ internal static partial class Program
                 {
                     var bitmap=new RenderTargetBitmap(980,740,96,96,PixelFormats.Pbgra32);bitmap.Render(root);
                     var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bitmap));
-                    using var stream=File.Create("bin/render-checks/scheme-panes-"+scheme.Name.Replace(' ','-')+".png");png.Save(stream);
+                    using var stream=File.Create("artifacts/render-checks/scheme-panes-"+scheme.Name.Replace(' ','-')+".png");png.Save(stream);
                 }
             }
             Call("ShowTab",hiddenTab);Layout();

@@ -66,7 +66,7 @@ internal static partial class Program
         AppTheme.Apply(AppThemeKind.Dark); Call("RebuildTabStrip"); Layout();
         var bitmap=new RenderTargetBitmap(980,80,96,96,PixelFormats.Pbgra32); bitmap.Render(root);
         var encoder=new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        using(var stream=File.Create("bin/render-checks/tab-colors.png")) encoder.Save(stream);
+        using(var stream=File.Create("artifacts/render-checks/tab-colors.png")) encoder.Save(stream);
         menu=Menu(first); colors=Item(menu,"Color...");
         var reset=colors.Items.OfType<MenuItem>().Single(m=>Equals(m.Header,"Reset color"));
         if(!reset.IsEnabled)throw new Exception("Custom tab color cannot be reset");

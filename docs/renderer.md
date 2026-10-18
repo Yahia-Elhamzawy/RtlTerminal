@@ -37,7 +37,7 @@ dotnet run --project tests/RtlTerminal.BufferTests -c Release
 dotnet run --project tests/RtlTerminal.RenderTests -c Release
 ```
 
-Render tests create offscreen WPF images under `bin/render-checks` for mixed RTL,
+Render tests create offscreen WPF images under `artifacts/render-checks` for mixed RTL,
 block continuity at 96/120/144 DPI, incremental-versus-fresh redraw equality,
 stable viewport width and row-cache invalidation, in addition to
 ANSI styles, selection, alternate screen, and large scrollback. These smoke tests

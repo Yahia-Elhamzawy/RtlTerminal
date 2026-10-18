@@ -6,5 +6,5 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-  <ItemGroup><ProjectReference Include="../../RtlTerminal.csproj" /></ItemGroup>
+  <ItemGroup><ProjectReference Include="../../src/RtlTerminal/RtlTerminal.csproj" /></ItemGroup>
 </Project>

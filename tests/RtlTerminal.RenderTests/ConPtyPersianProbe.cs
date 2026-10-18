@@ -116,8 +116,8 @@ internal static class ConPtyPersianProbe
         session.Dispose();
         if (!reader.Wait(TimeSpan.FromSeconds(5))) throw new Exception("ConPTY reader did not shut down");
         string raw; lock (output) raw = output.ToString();
-        Directory.CreateDirectory("bin/render-checks");
-        File.WriteAllText("bin/render-checks/conpty-persian-raw.txt", raw);
+        Directory.CreateDirectory("artifacts/render-checks");
+        File.WriteAllText("artifacts/render-checks/conpty-persian-raw.txt", raw);
         var result = buffer.CaptureSnapshot();
         var text = string.Join("\n", result.Lines.Select(line => string.Concat(line.Runs.Select(run => run.Text))));
         if (codex < 0 && (!text.Contains("ENV:truecolor|RtlTerminal|%") || Environment.GetEnvironmentVariable("COLORTERM") != parentColor || Environment.GetEnvironmentVariable("WSLENV") != parentWslEnv))

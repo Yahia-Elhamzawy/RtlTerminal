@@ -10,7 +10,7 @@ internal static class WslPathProbe
     {
         var resolver=typeof(MainWindow).Assembly.GetType("RtlTerminal.WslPathResolver")!;
         var convert=resolver.GetMethod("ConvertAsync")!;
-        var directory=Path.Combine(Environment.CurrentDirectory,"bin","wsl-path-probe");Directory.CreateDirectory(directory);
+        var directory=Path.Combine(Environment.CurrentDirectory,"artifacts","wsl-path-probe");Directory.CreateDirectory(directory);
         var file=Path.Combine(directory,"a b'&$%.png");File.WriteAllText(file,"");
         try
         {

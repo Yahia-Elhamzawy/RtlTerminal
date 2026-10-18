@@ -26,7 +26,7 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $version = & ./get-version.ps1
+          $version = & ./scripts/get-version.ps1
           "version=$version" >> $env:GITHUB_OUTPUT
           "tag=v$version" >> $env:GITHUB_OUTPUT
 
@@ -35,14 +35,14 @@ jobs:
 
       - name: Publish application
         run: >-
-          dotnet publish RtlTerminal.csproj
+          dotnet publish src/RtlTerminal/RtlTerminal.csproj
           --configuration Release
           --runtime win-x64
           --self-contained true
           -p:PublishSingleFile=true
           -p:IncludeNativeLibrariesForSelfExtract=true
           -p:PublishTrimmed=false
-          --output publish/win-x64
+          --output artifacts/publish/win-x64
 
       - name: Build installer
         shell: pwsh
@@ -57,7 +57,7 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
         shell: pwsh
         run: |
-          $installer = "release/RtlTerminal-Setup-$env:VERSION-x64.exe"
+          $installer = "artifacts/release/RtlTerminal-Setup-$env:VERSION-x64.exe"
           $releaseExists = gh release view $env:TAG 2>$null
           if ($LASTEXITCODE -eq 0) {
             gh release upload $env:TAG $installer --clobber

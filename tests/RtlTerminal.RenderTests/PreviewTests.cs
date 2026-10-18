@@ -35,7 +35,7 @@ internal static partial class Program
         if (!ReferenceEquals(original, RowDrawing(view, first))) throw new Exception("Scrolling back rebuilt cached Persian text");
         var fontHtml = WebUtility.HtmlDecode(TerminalHtmlExporter.Create([], "Cascadia Mono, Consolas", 18, 24));
         if (!fontHtml.Contains("font-family:'Cascadia Mono','Consolas','Segoe UI',Tahoma")) throw new Exception("Browser font families or Persian fallback missing");
-        var directory = Path.Combine("bin", "render-checks", "preview-cleanup-" + Guid.NewGuid().ToString("N"));
+        var directory = Path.Combine("artifacts", "render-checks", "preview-cleanup-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         var current = Path.Combine(directory, "preview-current.html");
         var older = Path.Combine(directory, "preview-old.html");

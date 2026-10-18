@@ -16,7 +16,7 @@ internal static class WslLaunchProbe
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
         var profile = Enum.Parse(typeof(MainWindow).GetNestedType("TerminalProfile", BindingFlags.NonPublic)!, "Wsl");
         var window = new MainWindow();
-        var directory = Path.Combine(Environment.CurrentDirectory, "bin", "wsl launch 'space " + Guid.NewGuid().ToString("N"));
+        var directory = Path.Combine(Environment.CurrentDirectory, "artifacts", "wsl launch 'space " + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         object? Call(string name, params object?[] args) => typeof(MainWindow).GetMethod(name, flags)!.Invoke(window, args);
         object? Get(object owner, string name) => owner.GetType().GetProperty(name)!.GetValue(owner);

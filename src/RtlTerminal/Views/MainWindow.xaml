@@ -4,7 +4,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="RtlTerminal"
-        Icon="RtlTerminal.ico"
+        Icon="/RtlTerminal;component/Assets/RtlTerminal.ico"
         Width="980"
         Height="620"
         MinWidth="480"
@@ -29,7 +29,7 @@
     <Window.Resources>
         <ResourceDictionary>
         <ResourceDictionary.MergedDictionaries>
-            <ResourceDictionary Source="TerminalScrollBar.xaml" />
+            <ResourceDictionary Source="/RtlTerminal;component/Controls/TerminalScrollBar.xaml" />
         </ResourceDictionary.MergedDictionaries>
         <Style TargetType="Separator">
             <Setter Property="Template">

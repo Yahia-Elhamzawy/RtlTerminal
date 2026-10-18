@@ -33,7 +33,7 @@ internal static partial class Program
             root.Measure(new Size(860,660));root.Arrange(new Rect(0,0,860,660));root.UpdateLayout();
             var bitmap=new RenderTargetBitmap(860,660,96,96,PixelFormats.Pbgra32);bitmap.Render(root);
             var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bitmap));
-            using var stream=File.Create("bin/render-checks/theme-settings-"+name.Replace(' ','-')+".png");png.Save(stream);
+            using var stream=File.Create("artifacts/render-checks/theme-settings-"+name.Replace(' ','-')+".png");png.Save(stream);
         }
         settings.Close();
         if(AppTheme.Current!=originalTheme || AppTheme.Scheme!=originalScheme)throw new Exception("Canceling theme settings applied the preview");

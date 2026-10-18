@@ -46,6 +46,8 @@ Rtl Terminal uses the Windows ConPTY API and works with command-line environment
 
 ### Features
 
+Developer reference: [repository layout and build paths](docs/project-layout.md).
+
 - Open `View` → `Theme...` for the Theme tab in Settings. Browse the unified list with Up/Down to preview locally, then choose Apply to update all terminals. The moon button beside HTML preview switches between dark mode and Gruvbox Light.
 - Pick a ready-made color scheme from Settings → Theme: Campbell, One Half, Solarized, Tango, Dracula, GitHub Dark, Nord, Gruvbox, Tokyo Night and Catppuccin. A scheme sets the default and 16 ANSI colors and switches to its matching theme.
 - Custom WPF cell renderer with cached visible rows and seamless block/box graphics.
@@ -136,46 +138,46 @@ Clone your published repository, then build it:
 ```powershell
 git clone https://github.com/mirbehnam/RtlTerminal.git
 cd RtlTerminal
-dotnet build RtlTerminal.csproj
+dotnet build src/RtlTerminal/RtlTerminal.csproj
 ```
 
 Create a self-contained x64 release:
 
 ```powershell
-dotnet publish RtlTerminal.csproj `
+dotnet publish src/RtlTerminal/RtlTerminal.csproj `
   -c Release `
   -r win-x64 `
   --self-contained true `
   -p:PublishSingleFile=true `
   -p:IncludeNativeLibrariesForSelfExtract=true `
   -p:PublishTrimmed=false `
-  -o publish\win-x64
+  -o artifacts\publish\win-x64
 ```
 
 The portable executable is created at:
 
 ```text
-publish\win-x64\RtlTerminal.exe
+artifacts\publish\win-x64\RtlTerminal.exe
 ```
 
 To publish the application and build the installer with Inno Setup:
 
 ```powershell
-.\build-release.ps1
+.\scripts\build-release.ps1
 ```
 
 The installer is created in:
 
 ```text
-release\RtlTerminal-Setup-<version>-x64.exe
+artifacts\release\RtlTerminal-Setup-<version>-x64.exe
 ```
 
 ### Automatic GitHub Releases
 
-The only release version is `<Version>` in `RtlTerminal.csproj`. The application, local installer build and GitHub workflow read it automatically. Update that value, commit, and push to `main` to create a GitHub Release:
+The only release version is `<Version>` in `src/RtlTerminal/RtlTerminal.csproj`. The application, local installer build and GitHub workflow read it automatically. Update that value, commit, and push to `main` to create a GitHub Release:
 
 ```powershell
-# Change <Version> in RtlTerminal.csproj, then commit.
+# Change <Version> in src/RtlTerminal/RtlTerminal.csproj, then commit.
 git push origin main
 ```
 
@@ -185,7 +187,7 @@ The workflow publishes one downloadable release asset:
 RtlTerminal-Setup-<version>-x64.exe
 ```
 
-The installer includes the self-contained .NET runtime. The workflow can also be started manually from GitHub **Actions**; both triggers create or update the release for the project version. Build the installer locally with `build-release.ps1`; its version is passed to Inno Setup automatically.
+The installer includes the self-contained .NET runtime. The workflow can also be started manually from GitHub **Actions**; both triggers create or update the release for the project version. Build the installer locally with `scripts/build-release.ps1`; its version is passed to Inno Setup automatically.
 
 ### Keyboard and Mouse Shortcuts
 
@@ -358,34 +360,34 @@ No license file is currently included. Add a `LICENSE` file before accepting ext
 ```powershell
 git clone https://github.com/mirbehnam/RtlTerminal.git
 cd RtlTerminal
-dotnet build RtlTerminal.csproj
+dotnet build src/RtlTerminal/RtlTerminal.csproj
 ```
 
 برای ساخت نسخه مستقل:
 
 ```powershell
-dotnet publish RtlTerminal.csproj `
+dotnet publish src/RtlTerminal/RtlTerminal.csproj `
   -c Release `
   -r win-x64 `
   --self-contained true `
   -p:PublishSingleFile=true `
   -p:IncludeNativeLibrariesForSelfExtract=true `
   -p:PublishTrimmed=false `
-  -o publish\win-x64
+  -o artifacts\publish\win-x64
 ```
 
 برای ساخت فایل نصب، Inno Setup 6 را نصب کرده و فرمان زیر را اجرا کنید:
 
 ```powershell
-.\build-release.ps1
+.\scripts\build-release.ps1
 ```
 
 ### ساخت خودکار Release در گیت‌هاب
 
-این مخزن با GitHub Actions فقط فایل نصب ویندوز ۶۴ بیتی را در Release قرار می‌دهد. برای انتشار، مقدار `<Version>` را در `RtlTerminal.csproj` تغییر دهید، کامیت کنید و به `main` پوش کنید:
+این مخزن با GitHub Actions فقط فایل نصب ویندوز ۶۴ بیتی را در Release قرار می‌دهد. برای انتشار، مقدار `<Version>` را در `src/RtlTerminal/RtlTerminal.csproj` تغییر دهید، کامیت کنید و به `main` پوش کنید:
 
 ```powershell
-# نسخه را در RtlTerminal.csproj تغییر دهید و کامیت کنید.
+# نسخه را در src/RtlTerminal/RtlTerminal.csproj تغییر دهید و کامیت کنید.
 git push origin main
 ```
 
@@ -488,34 +490,34 @@ git push origin main
 ```powershell
 git clone https://github.com/mirbehnam/RtlTerminal.git
 cd RtlTerminal
-dotnet build RtlTerminal.csproj
+dotnet build src/RtlTerminal/RtlTerminal.csproj
 ```
 
 لإنشاء إصدار مستقل:
 
 ```powershell
-dotnet publish RtlTerminal.csproj `
+dotnet publish src/RtlTerminal/RtlTerminal.csproj `
   -c Release `
   -r win-x64 `
   --self-contained true `
   -p:PublishSingleFile=true `
   -p:IncludeNativeLibrariesForSelfExtract=true `
   -p:PublishTrimmed=false `
-  -o publish\win-x64
+  -o artifacts\publish\win-x64
 ```
 
 لإنشاء ملف التثبيت، ثبّت Inno Setup 6 ثم شغّل:
 
 ```powershell
-.\build-release.ps1
+.\scripts\build-release.ps1
 ```
 
 ### إنشاء Release تلقائياً على GitHub
 
-ينشر GitHub Actions ملف تثبيت Windows x64 فقط. غيّر قيمة `<Version>` في `RtlTerminal.csproj`، ثم احفظ التغيير في commit وادفعه إلى `main`:
+ينشر GitHub Actions ملف تثبيت Windows x64 فقط. غيّر قيمة `<Version>` في `src/RtlTerminal/RtlTerminal.csproj`، ثم احفظ التغيير في commit وادفعه إلى `main`:
 
 ```powershell
-# غيّر النسخة في RtlTerminal.csproj ثم أنشئ commit.
+# غيّر النسخة في src/RtlTerminal/RtlTerminal.csproj ثم أنشئ commit.
 git push origin main
 ```
 

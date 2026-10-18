@@ -1,11 +1,11 @@
 $ErrorActionPreference = "Stop"
 
-$projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$publishDirectory = Join-Path $projectRoot "publish\win-x64"
-$releaseDirectory = Join-Path $projectRoot "release"
-$version = & (Join-Path $projectRoot "get-version.ps1")
+$projectRoot = Split-Path -Parent $PSScriptRoot
+$publishDirectory = Join-Path $projectRoot "artifacts\publish\win-x64"
+$releaseDirectory = Join-Path $projectRoot "artifacts\release"
+$version = & (Join-Path $PSScriptRoot "get-version.ps1")
 
-dotnet publish (Join-Path $projectRoot "RtlTerminal.csproj") `
+dotnet publish (Join-Path $projectRoot "src\RtlTerminal\RtlTerminal.csproj") `
     -c Release `
     -r win-x64 `
     --self-contained true `

@@ -31,8 +31,8 @@ internal static partial class Program
         if (plain.TrimEnd() != phrase) throw new Exception("HTML lost text at a soft-wrap boundary");
         if (Regex.Matches(html, "class=\"line\"").Count != 1) throw new Exception("Soft wraps became hard paragraph breaks in HTML");
         if (!html.Contains("word-break:normal") || !html.Contains("overflow-wrap:normal")) throw new Exception("HTML allows words to be broken");
-        Directory.CreateDirectory("bin/render-checks");
-        File.WriteAllText("bin/render-checks/persian-preview.html", html);
+        Directory.CreateDirectory("artifacts/render-checks");
+        File.WriteAllText("artifacts/render-checks/persian-preview.html", html);
 
         var reflow = typeof(TerminalView).Assembly.GetType("RtlTerminal.TerminalWordWrap")!.GetMethod("Reflow")!;
         int Width(string value) => System.Globalization.StringInfo.ParseCombiningCharacters(value).Length;

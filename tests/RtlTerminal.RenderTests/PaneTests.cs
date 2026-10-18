@@ -53,7 +53,7 @@ internal static partial class Program
         if (!((MenuItem)window.FindName("MovePaneMenuItem")).IsEnabled) throw new Exception("Move pane command stayed disabled after a split");
         var joinedBitmap = new RenderTargetBitmap(980,620,96,96,PixelFormats.Pbgra32); joinedBitmap.Render(root);
         var joinedPng = new PngBitmapEncoder(); joinedPng.Frames.Add(BitmapFrame.Create(joinedBitmap));
-        using(var stream = File.Create("bin/render-checks/joined-panes.png")) joinedPng.Save(stream);
+        using(var stream = File.Create("artifacts/render-checks/joined-panes.png")) joinedPng.Save(stream);
         if (tabs.Count != 1 || ((IList)Get(second, "Panes")!).Count != 2 || !ReferenceEquals(Get(firstPane,"Buffer"),buffer))
             throw new Exception("Join lost the original pane or buffer");
         if (firstView.GetSelectedText() != selected || !ReferenceEquals(((Border)Get(firstPane,"Frame")!).Child,firstView))
@@ -106,7 +106,7 @@ internal static partial class Program
         settingsRoot.Measure(new Size(620,700)); settingsRoot.Arrange(new Rect(0,0,620,700)); settingsRoot.UpdateLayout();
         var bitmap = new RenderTargetBitmap(620,700,96,96,PixelFormats.Pbgra32); bitmap.Render(settingsRoot);
         var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(bitmap));
-        using(var stream=File.Create("bin/render-checks/pane-settings.png")) png.Save(stream);
+        using(var stream=File.Create("artifacts/render-checks/pane-settings.png")) png.Save(stream);
         settings.Close(); window.Close();
         Console.WriteLine("PASS pane joins preserve views/buffers/selection, oversized joins are atomic, narrow windows scroll, detach/reuse and exact configurable shortcuts");
     }

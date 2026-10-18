@@ -4,7 +4,7 @@
 #endif
 #define AppPublisher "behnamapps"
 #define AppExeName "RtlTerminal.exe"
-#define PublishDirectory "..\publish\win-x64"
+#define PublishDirectory "..\artifacts\publish\win-x64"
 
 [Setup]
 AppId={{A5BC0F01-F4CD-49C4-B85F-8B88ACDC4416}
@@ -15,9 +15,9 @@ DefaultDirName={autopf}\behnamapps\Rtl Terminal
 DefaultGroupName=Rtl Terminal
 UninstallDisplayName=Rtl Terminal
 UninstallDisplayIcon={app}\{#AppExeName}
-OutputDir=..\release
+OutputDir=..\artifacts\release
 OutputBaseFilename=RtlTerminal-Setup-{#AppVersion}-x64
-SetupIconFile=..\RtlTerminal.ico
+SetupIconFile=..\src\RtlTerminal\Assets\RtlTerminal.ico
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern

@@ -12,7 +12,7 @@
 
     <RootNamespace>RtlTerminal</RootNamespace>
 
-    <ApplicationIcon>RtlTerminal.ico</ApplicationIcon>
+    <ApplicationIcon>Assets/RtlTerminal.ico</ApplicationIcon>
 
     <Company>behnamapps</Company>
 
@@ -42,8 +42,7 @@
     <Content Include="$(PkgMicrosoft_Windows_Console_ConPTY)/build/native/runtimes/x86/OpenConsole.exe" Link="ConPty/x86/OpenConsole.exe" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
     <Content Include="$(PkgMicrosoft_Windows_Console_ConPTY)/runtimes/win-arm64/native/conpty.dll" Link="ConPty/arm64/conpty.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
     <Content Include="$(PkgMicrosoft_Windows_Console_ConPTY)/build/native/runtimes/arm64/OpenConsole.exe" Link="ConPty/arm64/OpenConsole.exe" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
-    <Resource Include="RtlTerminal.ico" />
-    <Compile Remove="tests\**\*.cs" />
+    <Resource Include="Assets/RtlTerminal.ico" />
   </ItemGroup>
 
 

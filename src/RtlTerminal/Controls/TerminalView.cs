@@ -41,7 +41,7 @@ public sealed class TerminalView : ContentControl
     {
         Resources.MergedDictionaries.Add(new ResourceDictionary
         {
-            Source = new Uri("/RtlTerminal;component/TerminalScrollBar.xaml", UriKind.Relative)
+            Source = new Uri("/RtlTerminal;component/Controls/TerminalScrollBar.xaml", UriKind.Relative)
         });
         ApplyScrollBarColors();
         Focusable = true;

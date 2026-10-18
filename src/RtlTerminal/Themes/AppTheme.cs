@@ -89,10 +89,10 @@ public static class AppTheme
     public static Color HoverTab => IsLight ? Rgb(215, 220, 226) : Rgb(42, 43, 47);
     public static Color TabSeparator => IsLight ? Rgb(175, 184, 193) : Rgb(78, 80, 84);
     public static Color CursorFill => IsLight ? Color.FromArgb(90, 36, 41, 47) : Color.FromArgb(90, 230, 230, 230);
-    public static Color ScrollTrack => IsLight ? Rgb(246, 248, 250) : Rgb(17, 17, 17);
-    public static Color ScrollThumb => IsLight ? Rgb(190, 196, 203) : Rgb(85, 85, 85);
-    public static Color ScrollThumbHover => IsLight ? Rgb(150, 158, 167) : Rgb(136, 136, 136);
-    public static Color ScrollThumbPressed => IsLight ? Rgb(110, 119, 129) : Rgb(170, 170, 170);
+    public static Color ScrollTrack => IsLight ? Color.FromArgb(10, 0, 0, 0) : Color.FromArgb(14, 255, 255, 255);
+    public static Color ScrollThumb => IsLight ? Color.FromArgb(105, 0, 0, 0) : Color.FromArgb(100, 255, 255, 255);
+    public static Color ScrollThumbHover => IsLight ? Color.FromArgb(150, 0, 0, 0) : Color.FromArgb(160, 255, 255, 255);
+    public static Color ScrollThumbPressed => IsLight ? Color.FromArgb(185, 0, 0, 0) : Color.FromArgb(200, 255, 255, 255);
     public static Color CursorBorder => IsLight ? Rgb(110, 119, 129) : Colors.LightGray;
 
     // A scheme switches to its own dark or light theme.

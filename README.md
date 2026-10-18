@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
   <img src="RtlTerminal.png" width="128" height="128" alt="Rtl Terminal logo">
 
   # Rtl Terminal
@@ -43,6 +43,13 @@
 **Rtl Terminal** is an open-source Windows terminal emulator created by **behnamapps** for Persian, Arabic and other right-to-left language users. It provides a switchable RTL terminal view while preserving ANSI colors, interactive command-line applications, progress bars, links, Unicode text and standard terminal keyboard input.
 
 Rtl Terminal uses the Windows ConPTY API and works with command-line environments such as Command Prompt, PowerShell, WSL, Bash, developer tools, package managers and interactive terminal applications.
+
+### What's new in 1.1.2
+
+- WSL profiles for installed distributions, native default-shell startup, and a fix for quoted distribution names causing `WSL_E_DISTRO_NOT_FOUND`.
+- **File → Open current directory in Explorer** follows the selected pane, including WSL paths; with no selection it uses the last opened pane.
+- Slim, rounded terminal scrollbars expand on hover and remain usable with long histories in both light and dark themes.
+- Application sources now live in `src/RtlTerminal`, build scripts in `scripts`, and generated packages in `artifacts`. Build and release paths have been updated.
 
 ### Features
 
@@ -122,7 +129,7 @@ Download the latest `RtlTerminal-Setup-*-x64.exe` file from the GitHub Releases 
 
 #### Portable Version
 
-Download `RtlTerminal.exe` from the release assets and run it directly. The self-contained build does not require a separate .NET installation.
+GitHub Releases currently provides the installer. To use a portable build, publish from source as described below and keep the entire output folder, including `RtlTerminal.exe` and the adjacent `ConPty` folder. The self-contained build does not require a separate .NET installation.
 
 ### Build from Source
 
@@ -305,6 +312,13 @@ No license file is currently included. Add a `LICENSE` file before accepting ext
 
 این برنامه با استفاده از Windows ConPTY می‌تواند محیط‌هایی مانند Command Prompt، PowerShell، WSL، Bash، ابزارهای توسعه، package managerها و برنامه‌های تعاملی ترمینال را اجرا کند.
 
+### تغییرات نسخهٔ 1.1.2
+
+- نمایش توزیع‌های نصب‌شدهٔ WSL، اجرای شل پیش‌فرض خود توزیع و رفع خطای ناشی از کوتیشن دور نام توزیع.
+- گزینهٔ **File → Open current directory in Explorer** برای پوشهٔ فعلی پنل انتخاب‌شده، همراه با پشتیبانی از WSL و انتخاب آخرین پنل بازشده در نبود انتخاب.
+- نوار اسکرول باریک و گرد با حالت ماوس و درگ، هماهنگ با تم روشن و تیره و قابل استفاده در تاریخچه‌های طولانی.
+- انتقال سورس به `src/RtlTerminal`، اسکریپت‌ها به `scripts` و خروجی‌ها به `artifacts` و اصلاح مسیرهای ساخت و انتشار.
+
 ### امکانات
 
 - انتخاب تم روشن یا تیره از `View` → `Theme` با ذخیرهٔ انتخاب؛ حفظ رنگ‌های RGB صریح برنامه‌ها
@@ -351,7 +365,7 @@ No license file is currently included. Add a `LICENSE` file before accepting ext
 
 برای نصب معمولی، آخرین فایل `RtlTerminal-Setup-*-x64.exe` را از بخش Releases گیت‌هاب دانلود و اجرا کنید. فایل نصب دارای میان‌بر Start Menu، میان‌بر اختیاری Desktop و Uninstall استاندارد ویندوز است.
 
-برای استفاده به‌صورت Portable، فایل `RtlTerminal.exe` را دانلود و مستقیماً اجرا کنید. نسخه self-contained به نصب جداگانه .NET نیاز ندارد.
+در GitHub Releases فعلاً فایل نصب منتشر می‌شود. برای استفادهٔ Portable، مطابق راهنمای ساخت از سورس خروجی بگیرید و کل پوشهٔ خروجی، شامل `RtlTerminal.exe` و پوشهٔ مجاور `ConPty`، را کنار هم نگه دارید. نسخهٔ self-contained به نصب جداگانهٔ .NET نیاز ندارد.
 
 ### ساخت از سورس
 
@@ -435,6 +449,13 @@ git push origin main
 
 يعتمد البرنامج على Windows ConPTY، ويمكنه تشغيل Command Prompt وPowerShell وWSL وBash وأدوات المطورين ومديري الحزم وتطبيقات CLI وTUI.
 
+### الجديد في الإصدار 1.1.2
+
+- ملفات تعريف لتوزيعات WSL المثبتة، وتشغيل الصدفة الافتراضية، وإصلاح خطأ علامات الاقتباس حول اسم التوزيعة.
+- خيار **File → Open current directory in Explorer** لمجلد الجزء المحدد، مع دعم WSL واستخدام آخر جزء مفتوح عند عدم التحديد.
+- شريط تمرير رفيع بحواف مستديرة يتمدد عند مرور المؤشر ويدعم المظهرين الفاتح والداكن والسجلات الطويلة.
+- تنظيم المصدر في `src/RtlTerminal` والبرامج النصية في `scripts` والمخرجات في `artifacts`، مع تحديث مسارات البناء والنشر.
+
 ### المميزات
 
 - اختيار مظهر فاتح أو داكن من `View` → `Theme` مع حفظ الاختيار والحفاظ على ألوان RGB الصريحة
@@ -481,7 +502,7 @@ git push origin main
 
 حمّل أحدث ملف باسم `RtlTerminal-Setup-*-x64.exe` من صفحة GitHub Releases ثم شغّله. يضيف المثبّت اختصاراً في قائمة Start واختصاراً اختيارياً على سطح المكتب ويوفر أداة إزالة قياسية.
 
-يمكن أيضاً تنزيل النسخة المحمولة `RtlTerminal.exe` وتشغيلها مباشرة. النسخة المستقلة لا تحتاج إلى تثبيت .NET بشكل منفصل.
+يوفر GitHub Releases حالياً برنامج التثبيت. لاستخدام نسخة محمولة، انشر من المصدر وفق التعليمات أدناه واحتفظ بمجلد المخرجات كاملاً، بما فيه `RtlTerminal.exe` ومجلد `ConPty` المجاور. النسخة المستقلة لا تحتاج إلى تثبيت .NET بشكل منفصل.
 
 ### البناء من المصدر
 

@@ -38,26 +38,41 @@
 
 ## English
 
-### Experimental macro upgrade (this branch)
-
-**Tools → Macros** supports interactive/timed recording, independent terminal key actions (including Ctrl+C), searchable management, a numbered step editor, pause/resume and single-step playback. Settings controls recorded key groups, exclusions, automatic sensitive-input detection, and asking for sensitive values at runtime instead of storing them. Optional named runtime inputs are in the editor's Advanced section. Unexpected prompts pause for review after timeout without resending commands. See the [macro guide, security details and compatibility notes](docs/macros.md).
-
-**نسخهٔ آزمایشی ماکروها:** ضبط کلیدهای تعاملی، ویرایش مراحل، جست‌وجو، مکث و اجرای مرحله‌ای اضافه شده‌اند. تنظیمات امکان تشخیص ورودی حساس و پرسیدن آن هنگام اجرا را فراهم می‌کند. برای رفتار Ctrl+C، پاسخ متفاوت سرور و محدودیت تشخیص رمز، [راهنمای ماکروها](docs/macros.md) را ببینید. این امکانات روی شاخهٔ آزمایشی‌اند و هنوز در نسخهٔ منتشرشده نیستند.
-
-**تحديث الماكرو التجريبي:** تسجيل المفاتيح التفاعلية، تحرير الخطوات، البحث، الإيقاف المؤقت والتنفيذ خطوة بخطوة. تتيح الإعدادات اكتشاف الإدخال الحساس وطلبه أثناء التشغيل بدلاً من تخزينه. راجع [دليل الماكرو](docs/macros.md). لم يُدمج هذا التحديث في الإصدار المنشور بعد.
-
 ### Rtl Terminal for Windows
 
 **Rtl Terminal** is an open-source Windows terminal emulator created by **behnamapps** for Persian, Arabic and other right-to-left language users. It provides a switchable RTL terminal view while preserving ANSI colors, interactive command-line applications, progress bars, links, Unicode text and standard terminal keyboard input.
 
 Rtl Terminal uses the Windows ConPTY API and works with command-line environments such as Command Prompt, PowerShell, WSL, Bash, developer tools, package managers and interactive terminal applications.
 
-### What's new in 1.1.2
+### What's new in 1.1.3
+
+- **Tools → Macros**: interactive and timed recording, searchable management, a numbered step editor, pause/resume and single-step playback.
+- Independent terminal key actions, including `Ctrl+C`, with configurable key groups and exclusions. Copying selected text is not recorded as an interrupt.
+- Encrypted macro storage with an optional independent password, automatic sensitive-input detection, and an option to ask for sensitive values at runtime instead of storing them.
+- Optional named runtime inputs, such as a server name or username, in the editor's **Advanced** section.
+- If an expected prompt does not arrive before the timeout, playback pauses for review without resending previous commands.
+- Simplified startup introduction and a built-in macro guide in English, Persian and Arabic.
+- Project license updated to [GNU GPL v3](LICENSE).
+
+### Highlights from 1.1.2
 
 - WSL profiles for installed distributions, native default-shell startup, and a fix for quoted distribution names causing `WSL_E_DISTRO_NOT_FOUND`.
 - **File → Open current directory in Explorer** follows the selected pane, including WSL paths; with no selection it uses the last opened pane.
 - Slim, rounded terminal scrollbars expand on hover and remain usable with long histories in both light and dark themes.
 - Application sources now live in `src/RtlTerminal`, build scripts in `scripts`, and generated packages in `artifacts`. Build and release paths have been updated.
+
+### Record and replay terminal macros
+
+1. Select the target terminal pane and open **Tools → Macros → Start recording**.
+2. Enter commands and respond to prompts. Interactive mode is the default; choose timed recording in **Settings → Macros** when needed.
+3. Choose **Stop recording**, give the macro a name, review its steps and conditions, then save. Optionally assign a file password and a shortcut.
+4. Use **Tools → Macros → Run** or **Manage recorded macros** to replay, search, edit or step through a recording.
+
+Recording and playback stay attached to the original pane. Text submissions wait for the expected prompt; independent actions such as `Ctrl+C` use their recorded delay. Each step's condition can be edited. Toolbar buttons pause, resume, run one step or stop playback. Pausing the macro does not pause the server, and stopping does not undo commands already sent.
+
+Macro files are encrypted for the current Windows account. An optional independent password adds protection. **Settings → Macros → Do not store sensitive values; ask when running the macro** removes detected or manually marked sensitive values when saving. Existing stored values are removed only after resaving that macro. Detection uses prompt text, masking and unconfirmed input echo; review its result because it is not guaranteed. Runtime answers are not saved, and the file-unlock password is separate from server credentials.
+
+See the [macro guide, security details and file compatibility notes](docs/macros.md). Windows account encryption alone does not prevent access by other software running as that same user.
 
 ### Features
 
@@ -80,7 +95,7 @@ Developer reference: [repository layout and build paths](docs/project-layout.md)
 - Join an open tab using its context menu, or move a pane back to a separate tab from View. Joining is refused when the window cannot fit all panes.
 - Render animated progress bars and in-place terminal line updates.
 - Keep long-running AI agent output responsive with incremental scrollback rendering.
-- Choose a 2,000, 5,000 or 10,000-line scrollback history limit in Font settings.
+- Choose a 2,000, 5,000 or 10,000-line scrollback history limit in Settings.
 - Detect `http://`, `https://` and `www.` links and open them with `Ctrl + Click`.
 - Copy selected text with `Ctrl+C` or `Ctrl+Shift+C`.
 - Paste text, copied file paths and clipboard images with `Ctrl+V`, `Ctrl+Shift+V` or right-click.
@@ -221,13 +236,19 @@ The installer includes the self-contained .NET runtime. The workflow can also be
 | Switch to the next or previous tab | `Ctrl+Tab` or `Ctrl+Shift+Tab` |
 | Close the active pane or its last tab | `Ctrl+Shift+W` |
 | Interrupt the active command | `Ctrl+C` when no text is selected |
+| Run an assigned macro | `Ctrl+Shift+Alt+1` through `Ctrl+Shift+Alt+9` |
+| Pause or resume macro playback | `Ctrl+Shift+Alt+P` |
+| Stop macro playback | `Ctrl+Shift+Alt+End` |
+| Record, run or manage macros | `Tools` → `Macros` |
 | Open a detected link | Hold `Ctrl` and click the blue link |
 | Toggle automatic RTL detection | `View` → `Smart RTL` |
 | Force RTL paragraph direction and right alignment (off by default) | `View` → `Row RTL` |
-| Change terminal font or history size | `Edit` → `Font settings` |
+| Change terminal font, history size or macro preferences | `Edit` → `Settings` |
 | Export the current session | `File` → `Export session` |
 | Check for updates | `Help` → `Check for updates` |
 | Install or remove folder context menu | `Tools` → `Open in RtlTerminal` |
+
+Macro launch shortcuts and playback-control shortcuts can be disabled separately in **Settings → Macros**. Escape remains a terminal key; it is not the macro stop shortcut.
 
 ### Font Support
 
@@ -261,7 +282,7 @@ On Windows 11, the current registry integration may appear under **Show more opt
 - The terminal ships Microsoft.Windows.Console.ConPTY 1.25.260930003 in the `ConPty` directory. Keep that directory next to the executable, including for single-file publishes; the installer includes it.
 - Persian combining marks and ZWNJ use grapheme widths in both ConPTY and the terminal buffer. This prevents spaces being overwritten when Codex/TUI output is repainted.
 - Smart RTL wraps complete words in automatically wrapped Persian paragraphs. Explicit application line breaks, alternate screens and mouse-tracking grids are preserved. A token wider than the terminal still requires a character break.
-- The eye button beside SMART RTL opens a styled HTML copy of the visible page in your default browser. Soft wraps are joined for browser word wrapping; explicit line breaks are retained. The file stays locally under the temporary RtlTerminal/Previews directory.
+- The eye button beside SMART RTL opens a styled HTML preview in your default browser. Settings selects the current page, recent content (two pages before the viewport through the end), or all retained history. The preview opens at the bottom and older preview files are cleaned up. Soft wraps are joined for browser word wrapping; explicit line breaks are retained. Files stay locally under the temporary RtlTerminal/Previews directory.
 - Windows 7 is not supported.
 - The Windows 11 modern context menu is not directly extended by the current registry integration.
 - The custom WPF renderer is not the Windows Terminal rendering engine; CLI/TUI compatibility still needs application-specific testing.
@@ -308,7 +329,7 @@ Bug reports, compatibility reports, pull requests and translations are welcome. 
 
 ### License
 
-No license file is currently included. Add a `LICENSE` file before accepting external contributions or distributing the source under an open-source license.
+This project is licensed under the **GNU General Public License, version 3 (GPLv3)**. See [LICENSE](LICENSE) for the full text.
 
 ---
 
@@ -320,12 +341,35 @@ No license file is currently included. Add a `LICENSE` file before accepting ext
 
 این برنامه با استفاده از Windows ConPTY می‌تواند محیط‌هایی مانند Command Prompt، PowerShell، WSL، Bash، ابزارهای توسعه، package managerها و برنامه‌های تعاملی ترمینال را اجرا کند.
 
-### تغییرات نسخهٔ 1.1.2
+### تغییرات نسخهٔ 1.1.3
+
+- منوی **Tools → Macros** برای ضبط تعاملی و زمانی، مدیریت قابل جست‌وجو، ویرایش مراحل شماره‌دار، مکث و اجرای مرحله‌ای.
+- ضبط مستقل کلیدهایی مانند `Ctrl+C` با امکان تنظیم گروه‌های کلید و استثناها؛ کپی متن انتخاب‌شده به‌عنوان قطع عملیات ضبط نمی‌شود.
+- ذخیرهٔ رمزگذاری‌شده با رمز مستقل اختیاری، تشخیص خودکار ورودی حساس و امکان پرسیدن آن هنگام اجرا به‌جای ذخیره‌کردن.
+- ورودی‌های نام‌گذاری‌شده مانند نام سرور و نام کاربری در بخش **Advanced** ویرایشگر.
+- مکث برای بررسی در صورت نرسیدن اعلان مورد انتظار تا پایان مهلت، بدون ارسال دوبارهٔ فرمان‌های قبلی.
+- ساده‌سازی متن معرفی آغاز برنامه و راهنمای داخلی ماکرو به سه زبان.
+- تغییر مجوز پروژه به [GNU GPL v3](LICENSE).
+
+### تغییرات مهم نسخهٔ 1.1.2
 
 - نمایش توزیع‌های نصب‌شدهٔ WSL، اجرای شل پیش‌فرض خود توزیع و رفع خطای ناشی از کوتیشن دور نام توزیع.
 - گزینهٔ **File → Open current directory in Explorer** برای پوشهٔ فعلی پنل انتخاب‌شده، همراه با پشتیبانی از WSL و انتخاب آخرین پنل بازشده در نبود انتخاب.
 - نوار اسکرول باریک و گرد با حالت ماوس و درگ، هماهنگ با تم روشن و تیره و قابل استفاده در تاریخچه‌های طولانی.
 - انتقال سورس به `src/RtlTerminal`، اسکریپت‌ها به `scripts` و خروجی‌ها به `artifacts` و اصلاح مسیرهای ساخت و انتشار.
+
+### ضبط و اجرای ماکروهای ترمینال
+
+1. پنل مقصد را انتخاب کنید و از **Tools → Macros → Start recording** ضبط را شروع کنید.
+2. فرمان‌ها را وارد کنید و به اعلان‌ها پاسخ دهید. حالت تعاملی پیش‌فرض است؛ حالت زمانی را می‌توان در **Settings → Macros** انتخاب کرد.
+3. با **Stop recording** ضبط را پایان دهید، نام و مراحل را بررسی کنید و ذخیره کنید. رمز مستقل و میان‌بر اختیاری‌اند.
+4. از **Run** برای اجرا یا **Manage recorded macros** برای جست‌وجو، ویرایش و اجرای مرحله‌ای استفاده کنید.
+
+ماکرو به پنل اولیه متصل می‌ماند. ورودی معمول منتظر اعلان می‌ماند و عمل مستقلی مثل `Ctrl+C` با فاصلهٔ زمانی ضبط‌شده اجرا می‌شود؛ شرط هر مرحله قابل ویرایش است. دکمه‌های نوار ابزار امکان مکث، ادامه، اجرای یک مرحله و پایان اجرا را می‌دهند. مکث ماکرو، سرور را متوقف نمی‌کند و پایان اجرا فرمان‌های قبلی را برنمی‌گرداند.
+
+فایل‌ها برای حساب ویندوز فعلی رمزگذاری می‌شوند و می‌توان رمز مستقلی نیز برای آن‌ها تعیین کرد. گزینهٔ **Do not store sensitive values; ask when running the macro** در تنظیمات، مقدارهای حساسِ تشخیص‌داده‌شده یا علامت‌گذاری‌شده را هنگام ذخیره حذف می‌کند. اطلاعات قدیمی فقط پس از ذخیرهٔ مجدد همان ماکرو حذف می‌شوند. تشخیص خودکار از اعلان رمز، پوشاندن ورودی و تأییدنشدن بازتاب متن استفاده می‌کند؛ نتیجه را بررسی کنید چون قطعی نیست. پاسخ‌های زمان اجرا ذخیره نمی‌شوند و رمز بازکردن فایل ماکرو از رمز سرور مستقل است.
+
+[راهنمای کامل ماکروها، امنیت و سازگاری فایل‌ها](docs/macros.md) را ببینید. رمزگذاری حساب ویندوز به‌تنهایی مانع دسترسی برنامه‌های دیگری که با همان حساب اجرا می‌شوند نیست.
 
 ### امکانات
 
@@ -431,13 +475,19 @@ git push origin main
 | جابه‌جایی بین تب‌ها | `Ctrl+Tab` یا `Ctrl+Shift+Tab` |
 | بستن پنل فعال یا آخرین تب آن | `Ctrl+Shift+W` |
 | متوقف‌کردن فرمان جاری | `Ctrl+C` در صورتی که متنی انتخاب نشده باشد |
+| اجرای ماکروی دارای میان‌بر | `Ctrl+Shift+Alt+1` تا `Ctrl+Shift+Alt+9` |
+| مکث یا ادامهٔ اجرای ماکرو | `Ctrl+Shift+Alt+P` |
+| پایان اجرای ماکرو | `Ctrl+Shift+Alt+End` |
+| ضبط، اجرا و مدیریت ماکرو | منوی `Tools` و گزینهٔ `Macros` |
 | بازکردن لینک | نگه‌داشتن `Ctrl` و کلیک روی لینک آبی |
 | فعال‌کردن تشخیص خودکار RTL | منوی `View` و گزینه `Smart RTL` |
 | راست‌به‌چپ‌کردن جهت و تراز کل سطر؛ پیش‌فرض خاموش | منوی `View` و گزینه `Row RTL` |
-| تغییر فونت یا ظرفیت History | منوی `Edit` و گزینه `Font settings` |
+| تنظیم فونت، سابقه یا ماکروها | منوی `Edit` و گزینهٔ `Settings` |
 | خروجی‌گرفتن از جلسه | منوی `File` و گزینه `Export session` |
 | بررسی آپدیت | منوی `Help` و گزینه `Check for updates` |
 | مدیریت منوی راست‌کلیک | منوی `Tools` و گزینه `Open in RtlTerminal` |
+
+میان‌برهای اجرای ماکرو و کنترل پخش در **Settings → Macros** جداگانه قابل غیرفعال‌کردن‌اند. Escape همچنان کلید ترمینال است و اجرای ماکرو را متوقف نمی‌کند.
 
 ### مشارکت
 
@@ -445,7 +495,7 @@ git push origin main
 
 ### مجوز
 
-در حال حاضر فایل مجوز در پروژه وجود ندارد. قبل از انتشار پروژه به‌عنوان نرم‌افزار متن‌باز، یک فایل `LICENSE` مناسب اضافه کنید.
+این پروژه با **مجوز عمومی همگانی گنو نسخهٔ ۳ (GPLv3)** ارائه می‌شود. متن کامل در فایل [LICENSE](LICENSE) قرار دارد.
 
 ---
 
@@ -457,12 +507,35 @@ git push origin main
 
 يعتمد البرنامج على Windows ConPTY، ويمكنه تشغيل Command Prompt وPowerShell وWSL وBash وأدوات المطورين ومديري الحزم وتطبيقات CLI وTUI.
 
-### الجديد في الإصدار 1.1.2
+### الجديد في الإصدار 1.1.3
+
+- قائمة **Tools → Macros** للتسجيل التفاعلي والزمني، والبحث، وتحرير الخطوات المرقّمة، والإيقاف المؤقت والتنفيذ خطوة بخطوة.
+- تسجيل مفاتيح مستقلة مثل `Ctrl+C` مع إعداد مجموعات المفاتيح والاستثناءات؛ نسخ النص المحدد لا يُسجّل كمقاطعة.
+- تخزين مشفّر مع كلمة مرور مستقلة اختيارية، واكتشاف الإدخال الحساس وطلبه أثناء التشغيل بدلاً من تخزينه.
+- مدخلات مسماة مثل اسم الخادم والمستخدم في قسم **Advanced** بالمحرر.
+- التوقف للمراجعة عند انتهاء مهلة المطالبة المتوقعة، دون إعادة إرسال الأوامر السابقة.
+- تبسيط مقدمة بدء التشغيل وإضافة دليل ماكرو مدمج بثلاث لغات.
+- تحديث ترخيص المشروع إلى [GNU GPL v3](LICENSE).
+
+### أبرز تغييرات الإصدار 1.1.2
 
 - ملفات تعريف لتوزيعات WSL المثبتة، وتشغيل الصدفة الافتراضية، وإصلاح خطأ علامات الاقتباس حول اسم التوزيعة.
 - خيار **File → Open current directory in Explorer** لمجلد الجزء المحدد، مع دعم WSL واستخدام آخر جزء مفتوح عند عدم التحديد.
 - شريط تمرير رفيع بحواف مستديرة يتمدد عند مرور المؤشر ويدعم المظهرين الفاتح والداكن والسجلات الطويلة.
 - تنظيم المصدر في `src/RtlTerminal` والبرامج النصية في `scripts` والمخرجات في `artifacts`، مع تحديث مسارات البناء والنشر.
+
+### تسجيل وحدات الماكرو وتشغيلها
+
+1. حدّد الجزء المطلوب ثم اختر **Tools → Macros → Start recording**.
+2. أدخل الأوامر وأجب عن المطالبات. الوضع التفاعلي هو الافتراضي؛ يمكن اختيار الوضع الزمني من **Settings → Macros**.
+3. اختر **Stop recording**، ثم سمِّ الماكرو وراجع خطواته واحفظه. كلمة المرور المستقلة والاختصار اختياريان.
+4. استخدم **Run** للتشغيل أو **Manage recorded macros** للبحث والتحرير والتنفيذ خطوة بخطوة.
+
+يبقى الماكرو مرتبطاً بجزئه الأصلي. ينتظر الإدخال العادي المطالبة، وتستخدم الإجراءات المستقلة مثل `Ctrl+C` التأخير المسجّل؛ يمكن تعديل شرط كل خطوة. تتيح أزرار شريط الأدوات الإيقاف المؤقت والمتابعة وتشغيل خطوة واحدة وإنهاء التشغيل. إيقاف الماكرو مؤقتاً لا يوقف الخادم، وإنهاؤه لا يتراجع عن الأوامر السابقة.
+
+تُشفّر الملفات لحساب Windows الحالي، مع إمكانية إضافة كلمة مرور مستقلة. يزيل خيار **Do not store sensitive values; ask when running the macro** القيم المكتشفة أو المحددة كحساسة عند الحفظ. لا تُحذف القيم القديمة إلا عند إعادة حفظ الماكرو نفسه. يعتمد الاكتشاف على نص المطالبة والإخفاء وعدم تأكيد صدى الإدخال؛ راجع النتيجة لأنه غير مضمون. لا تُحفظ إجابات وقت التشغيل، وكلمة مرور الملف مستقلة عن بيانات الخادم.
+
+راجع [دليل الماكرو والأمان وتوافق الملفات](docs/macros.md). تشفير حساب Windows وحده لا يمنع وصول برامج أخرى تعمل بالحساب نفسه.
 
 ### المميزات
 
@@ -568,13 +641,19 @@ git push origin main
 | التنقل بين علامات التبويب | `Ctrl+Tab` أو `Ctrl+Shift+Tab` |
 | إغلاق الجزء النشط أو علامته الأخيرة | `Ctrl+Shift+W` |
 | مقاطعة الأمر الحالي | `Ctrl+C` عند عدم تحديد نص |
+| تشغيل ماكرو ذي اختصار | `Ctrl+Shift+Alt+1` إلى `Ctrl+Shift+Alt+9` |
+| إيقاف الماكرو مؤقتاً أو متابعته | `Ctrl+Shift+Alt+P` |
+| إنهاء تشغيل الماكرو | `Ctrl+Shift+Alt+End` |
+| تسجيل الماكرو وتشغيله وإدارته | `Tools` → `Macros` |
 | فتح رابط | اضغط باستمرار على `Ctrl` ثم انقر على الرابط الأزرق |
 | تفعيل اكتشاف RTL تلقائياً | قائمة `View` ثم `Smart RTL` |
 | فرض اتجاه ومحاذاة السطر إلى اليمين؛ معطّل افتراضياً | قائمة `View` ثم `Row RTL` |
-| تغيير الخط أو حجم السجل | قائمة `Edit` ثم `Font settings` |
+| إعداد الخط والسجل والماكرو | قائمة `Edit` ثم `Settings` |
 | تصدير الجلسة الحالية | قائمة `File` ثم `Export session` |
 | التحقق من التحديثات | قائمة `Help` ثم `Check for updates` |
 | إدارة قائمة المجلدات | قائمة `Tools` ثم `Open in RtlTerminal` |
+
+يمكن تعطيل اختصارات تشغيل الماكرو والتحكم بالتنفيذ بشكل منفصل من **Settings → Macros**. يبقى Escape مفتاحاً للطرفية ولا يوقف تشغيل الماكرو.
 
 ### المساهمة
 
@@ -582,7 +661,7 @@ git push origin main
 
 ### الترخيص
 
-لا يتضمن المشروع حالياً ملف ترخيص. أضف ملف `LICENSE` مناسباً قبل نشر المشروع كمشروع مفتوح المصدر أو قبول مساهمات خارجية.
+هذا المشروع مرخّص بموجب **رخصة جنو العمومية، الإصدار الثالث (GPLv3)**. راجع النص الكامل في [LICENSE](LICENSE).
 
 ---
 

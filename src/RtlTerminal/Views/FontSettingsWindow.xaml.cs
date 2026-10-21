@@ -43,6 +43,7 @@ public partial class FontSettingsWindow : Window
         PaneShortcutSettings? shortcuts = null)
     {
         InitializeComponent();
+        InitializeMacroSettings();
         _fontFamilies = Fonts.SystemFontFamilies
             .Select(font => font.Source)
             .Distinct(StringComparer.CurrentCultureIgnoreCase)

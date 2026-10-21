@@ -476,6 +476,7 @@
                 </Style>
             </TextBlock.Style>
         </TextBlock>
+        <Button x:Name="MacroStatusButton" DockPanel.Dock="Right" Visibility="Collapsed" Margin="4,0" Padding="6,0" Height="26" Style="{StaticResource WindowCaptionButtonStyle}" Click="MacroStatus_Click" ToolTip="Stop macro recording or playback" AutomationProperties.Name="Macro status and stop"/>
         <Button x:Name="HtmlPreviewButton" DockPanel.Dock="Right" Width="30" Height="26" Margin="8,0,0,0"
                 Style="{StaticResource WindowCaptionButtonStyle}" Click="HtmlPreviewButton_Click"
                 ToolTip="Preview this page in your browser" AutomationProperties.Name="HTML preview">
@@ -560,6 +561,14 @@
                 <MenuItem x:Name="ThemeMenuItem" Header="_Theme..." Click="ThemeMenuItem_Click" />
             </MenuItem>
             <MenuItem Header="_Tools">
+                <MenuItem Header="_Macros" SubmenuOpened="MacroMenu_Opened">
+                    <MenuItem x:Name="MacroRecordMenuItem" Header="_Start recording" Click="MacroRecord_Click"/>
+                    <MenuItem x:Name="MacroStopMenuItem" Header="Stop playback" IsEnabled="False" Click="MacroStop_Click"/>
+                    <Separator/>
+                    <MenuItem x:Name="MacroRunMenu" Header="_Run"><MenuItem Header="No recorded macros" IsEnabled="False"/></MenuItem>
+                    <MenuItem Header="_Manage recorded macros..." Click="MacroManage_Click"/>
+                    <MenuItem Header="Macro _settings..." Click="MacroSettings_Click"/>
+                </MenuItem>
                 <MenuItem x:Name="ContextMenuIntegrationMenuItem"
                           Header="Add _Open in RtlTerminal"
                           IsCheckable="True"

@@ -19,6 +19,7 @@ internal static partial class Program
     }
     private static void Run()
     {
+        if (Environment.GetCommandLineArgs().Contains("--macro-child")) { MacroTests.Child(); return; }
         var wslProbe = Array.IndexOf(Environment.GetCommandLineArgs(), "--wsl-path-probe");
         if (wslProbe >= 0) { WslPathProbe.Run(Environment.GetCommandLineArgs()[wslProbe + 1]); return; }
         var wslLaunchProbe = Array.IndexOf(Environment.GetCommandLineArgs(), "--wsl-launch-probe");
@@ -35,6 +36,8 @@ internal static partial class Program
         }
         if (Environment.GetCommandLineArgs().Contains("--conpty-child")) { ConPtyPersianProbe.Child(); return; }
         if (Environment.GetCommandLineArgs().Contains("--conpty-persian")) { ConPtyPersianProbe.Run(); return; }
+        MacroTests.Run().GetAwaiter().GetResult();
+        CheckMacroUi();
         var view = new TerminalView
         {
             Width = 800, Height = 420, FontFamily = new FontFamily("Consolas"),

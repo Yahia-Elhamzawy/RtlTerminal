@@ -57,6 +57,24 @@ internal static partial class Program
             }
             sessions[0].Write("echo ALPHA_BEFORE_JOIN\r"); sessions[1].Write("echo BETA_BEFORE_JOIN\r");
             WaitFor(()=>Text(panes[0]).Contains("ALPHA_BEFORE_JOIN")&&Text(panes[1]).Contains("BETA_BEFORE_JOIN"));
+            var recorder = new MacroRecorder(MacroMode.Interactive);
+            typeof(MainWindow).GetField("_macroRecorder", flags)!.SetValue(window, recorder);
+            typeof(MainWindow).GetField("_macroPane", flags)!.SetValue(window, panes[0]);
+            Call("SendUserInput", panes[0], "echo RECORDED_PANE_ONLY\r");
+            Call("SendUserInput", panes[1], "echo NOT_RECORDED_OTHER_PANE\r");
+            WaitFor(()=>Text(panes[0]).Contains("RECORDED_PANE_ONLY")&&Text(panes[1]).Contains("NOT_RECORDED_OTHER_PANE"));
+            if (recorder.Macro.Steps.Count != 1 || recorder.Macro.Steps[0].Input != "echo RECORDED_PANE_ONLY\r")
+                throw new Exception("Macro recorded input from another pane.");
+            typeof(MainWindow).GetField("_macroRecorder", flags)!.SetValue(window, null);
+            using (var cancellation = new CancellationTokenSource())
+            {
+                typeof(MainWindow).GetField("_macroCancellation", flags)!.SetValue(window, cancellation);
+                Call("SendUserInput", panes[0], "echo MUST_NOT_INTERLEAVE\r");
+                Thread.Sleep(100); Pump();
+                if (Text(panes[0]).Contains("MUST_NOT_INTERLEAVE")) throw new Exception("Manual input interleaved with macro playback.");
+                typeof(MainWindow).GetField("_macroCancellation", flags)!.SetValue(window, null);
+                typeof(MainWindow).GetField("_macroPane", flags)!.SetValue(window, null);
+            }
             if(!(bool)Call("TryJoinTab",tabs[0],false)!)throw new Exception("Live panes could not be joined");
             sessions[0].Write("echo ALPHA_AFTER_JOIN\r"); sessions[1].Write("echo BETA_AFTER_JOIN\r");
             WaitFor(()=>Text(panes[0]).Contains("ALPHA_AFTER_JOIN")&&Text(panes[1]).Contains("BETA_AFTER_JOIN"));

@@ -211,6 +211,7 @@ ApplySavedFontSettings();
             pane.GridSize = (columns, rows);
             pane.CancellationTokenSource = new CancellationTokenSource();
             pane.Session = new ConPtySession(columns, rows);
+            pane.SessionEnded = false;
             pane.Session.Start(
                 GetProfileCommand(pane.Profile, showIntroduction, pane.WslDistribution, wslDirectory),
                 pane.Profile == TerminalProfile.Wsl ? wslDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) : startupDirectory);
@@ -280,6 +281,8 @@ ApplySavedFontSettings();
 
     private void Window_Closed(object? sender, EventArgs e)
     {
+        _macroCancellation?.Cancel();
+        _macroRecorder = null;
         foreach (var pane in _tabs.SelectMany(tab => tab.Panes))
         {
             pane.IsShown = false;
@@ -328,6 +331,7 @@ ApplySavedFontSettings();
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (HandleMacroKey(e)) { e.Handled = true; return; }
         var controlPressed = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
         var shiftPressed = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
 
@@ -553,7 +557,7 @@ ApplySavedFontSettings();
         if (ActiveSession is null || string.IsNullOrEmpty(e.Text))
             return;
 
-        ActiveSession.Write(e.Text);
+        SendUserInput(ActivePane, e.Text);
         e.Handled = true;
     }
 
@@ -792,7 +796,7 @@ ApplySavedFontSettings();
 
     private void FontSettingsMenuItem_Click(object sender, RoutedEventArgs e) => ShowSettings(openThemeTab: false);
 
-    private void ShowSettings(bool openThemeTab)
+    private void ShowSettings(bool openThemeTab, bool openMacroTab = false)
     {
         var settingsWindow = new FontSettingsWindow(
             TerminalTextBox.FontFamily.Source,
@@ -805,10 +809,13 @@ ApplySavedFontSettings();
         };
 
         if (openThemeTab) settingsWindow.ShowThemeTab();
+        if (openMacroTab) settingsWindow.ShowMacroTab();
 
         if (settingsWindow.ShowDialog() != true)
             return;
 
+        _macroSettings = settingsWindow.SelectedMacroSettings;
+        _macroSettings.Save();
         ApplyHistorySize(settingsWindow.SelectedHistorySize);
         ApplyFontSettings(settingsWindow.SelectedSettings);
         AppSettings.SaveFont(settingsWindow.SelectedSettings);
@@ -1196,11 +1203,11 @@ ApplySavedFontSettings();
         {
             TerminalProfile.PowerShell =>
                 """
-                C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoLogo -NoExit -Command "$lines=@('+--------------------------------------------------------+','| RtlTerminal v{APP_VERSION}                                     |','|                                                        |','| Author : Behnam Tajadini                               |','| Source : github.com/mirbehnam/RtlTerminal              |','| YouTube: @aka_techno                                   |','+--------------------------------------------------------+','','  پشتیبانی کامل از زبان فارسی و راست‌به‌چپ',''); $lines | ForEach-Object { Write-Host $_ }"
+                C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoLogo -NoExit -Command "$lines=@('RtlTerminal v{APP_VERSION}','','Author : Behnam Tajadini','Source : github.com/mirbehnam/RtlTerminal','YouTube: @aka_techno',''); $lines | ForEach-Object { Write-Host $_ }"
                 """,
             _ =>
                 """
-                C:\Windows\System32\cmd.exe /D /Q /V:OFF /K "chcp 65001>nul & echo +--------------------------------------------------------+& echo ^| RtlTerminal v{APP_VERSION}                                     ^|& echo ^|                                                        ^|& echo ^| Author : Behnam Tajadini                               ^|& echo ^| Source : github.com/mirbehnam/RtlTerminal              ^|& echo ^| YouTube: @aka_techno                                   ^|& echo +--------------------------------------------------------+& echo.& echo   پشتیبانی کامل از زبان فارسی و راست‌به‌چپ& echo."
+                C:\Windows\System32\cmd.exe /D /Q /V:OFF /K "chcp 65001>nul & echo RtlTerminal v{APP_VERSION}& echo.& echo Author : Behnam Tajadini& echo Source : github.com/mirbehnam/RtlTerminal& echo YouTube: @aka_techno& echo."
                 """
         }).Replace("{APP_VERSION}", AppVersion.Display);
         if (profile == TerminalProfile.PowerShell && showIntroduction)
@@ -1808,7 +1815,7 @@ ApplySavedFontSettings();
             if (ActiveView.HasSelection)
                 CopySelection();
             else
-                ActiveSession.Write("\x03");
+                SendUserInput(ActivePane, "\x03");
 
             e.Handled = true;
             return;
@@ -1823,7 +1830,7 @@ ApplySavedFontSettings();
 
         if (controlPressed && GetEffectiveKey(e) == Key.Space)
         {
-            ActiveSession.Write("\0");
+            SendUserInput(ActivePane, "\0");
             e.Handled = true;
             return;
         }
@@ -1838,7 +1845,7 @@ ApplySavedFontSettings();
         if (controlPressed && e.Key >= Key.A && e.Key <= Key.Z)
         {
             var controlCharacter = (char)(e.Key - Key.A + 1);
-            ActiveSession.Write(controlCharacter.ToString());
+            SendUserInput(ActivePane, controlCharacter.ToString());
             e.Handled = true;
             return;
         }
@@ -1849,7 +1856,7 @@ ApplySavedFontSettings();
             InputLanguageManager.Current.CurrentInputLanguage
                 .TwoLetterISOLanguageName == "fa")
         {
-            ActiveSession.Write("\u061f");
+            SendUserInput(ActivePane, "\u061f");
             e.Handled = true;
             return;
         }
@@ -1866,7 +1873,7 @@ ApplySavedFontSettings();
         if (sequence is null)
             return;
 
-        ActiveSession.Write(sequence);
+        SendUserInput(ActivePane, sequence);
         e.Handled = true;
     }
 
@@ -2030,10 +2037,10 @@ ApplySavedFontSettings();
         WritePanePaste(pane, string.Join(" ", formatted));
     }
 
-    private static void WritePanePaste(TerminalPane pane, string text)
+    private void WritePanePaste(TerminalPane pane, string text)
     {
         if (pane.Session is not { } session || string.IsNullOrEmpty(text)) return;
-        session.Write(pane.LastRenderedSnapshot?.Modes.BracketedPaste == true ? $"\x1b[200~{text}\x1b[201~" : text);
+        SendUserInput(pane, pane.LastRenderedSnapshot?.Modes.BracketedPaste == true ? $"\x1b[200~{text}\x1b[201~" : text);
     }
 
     private string? SaveClipboardImage()
@@ -2132,6 +2139,7 @@ ApplySavedFontSettings();
             var output = new string(characters, 0, characterCount);
 
             var snapshot = buffer.Process(output);
+            pane.Playback?.Observe(snapshot);
 
             foreach (var response in snapshot.Responses)
                 session.Write(response);
@@ -2141,6 +2149,8 @@ ApplySavedFontSettings();
             else
                 QueueRender(pane, snapshot);
         }
+        pane.SessionEnded = true;
+        pane.Playback?.Close();
     }
 
     private void SuspendRendering(TerminalPane pane, long revision)
@@ -2381,6 +2391,8 @@ ApplySavedFontSettings();
         public bool IsShown { get; set; }
         public string? WslDistribution { get; set; }
         public ConPtySession? Session { get; set; }
+        public volatile MacroPlayback? Playback;
+        public volatile bool SessionEnded;
         public TerminalBuffer? Buffer { get; set; }
         public CancellationTokenSource? CancellationTokenSource { get; set; }
         public TerminalSnapshot? PendingSnapshot { get; set; }
@@ -2398,6 +2410,7 @@ ApplySavedFontSettings();
             var session = Session;
             var cancellationTokenSource = CancellationTokenSource;
             CancellationTokenSource = null;
+            Playback?.Close();
             Session = null;
 
             return Task.Run(() =>

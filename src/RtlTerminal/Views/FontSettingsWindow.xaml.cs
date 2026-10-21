@@ -202,6 +202,7 @@ public partial class FontSettingsWindow : Window
 
     private void ApplyButton_Click(object sender, RoutedEventArgs e)
     {
+        if (!ValidateMacroSettings()) return;
         var family = GetSelectedFamily();
 
         if (string.IsNullOrWhiteSpace(family))

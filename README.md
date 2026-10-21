@@ -38,6 +38,14 @@
 
 ## English
 
+### Experimental macro upgrade (this branch)
+
+**Tools → Macros** supports interactive/timed recording, independent terminal key actions (including Ctrl+C), searchable management, a numbered step editor, pause/resume and single-step playback. Settings controls recorded key groups, exclusions, automatic sensitive-input detection, and asking for sensitive values at runtime instead of storing them. Optional named runtime inputs are in the editor's Advanced section. Unexpected prompts pause for review after timeout without resending commands. See the [macro guide, security details and compatibility notes](docs/macros.md).
+
+**نسخهٔ آزمایشی ماکروها:** ضبط کلیدهای تعاملی، ویرایش مراحل، جست‌وجو، مکث و اجرای مرحله‌ای اضافه شده‌اند. تنظیمات امکان تشخیص ورودی حساس و پرسیدن آن هنگام اجرا را فراهم می‌کند. برای رفتار Ctrl+C، پاسخ متفاوت سرور و محدودیت تشخیص رمز، [راهنمای ماکروها](docs/macros.md) را ببینید. این امکانات روی شاخهٔ آزمایشی‌اند و هنوز در نسخهٔ منتشرشده نیستند.
+
+**تحديث الماكرو التجريبي:** تسجيل المفاتيح التفاعلية، تحرير الخطوات، البحث، الإيقاف المؤقت والتنفيذ خطوة بخطوة. تتيح الإعدادات اكتشاف الإدخال الحساس وطلبه أثناء التشغيل بدلاً من تخزينه. راجع [دليل الماكرو](docs/macros.md). لم يُدمج هذا التحديث في الإصدار المنشور بعد.
+
 ### Rtl Terminal for Windows
 
 **Rtl Terminal** is an open-source Windows terminal emulator created by **behnamapps** for Persian, Arabic and other right-to-left language users. It provides a switchable RTL terminal view while preserving ANSI colors, interactive command-line applications, progress bars, links, Unicode text and standard terminal keyboard input.

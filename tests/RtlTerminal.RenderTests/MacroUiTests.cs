@@ -19,7 +19,8 @@ internal static partial class Program
         if (MacroSettings.Load() != saved) throw new Exception("Opening settings changed saved macro preferences.");
         var macro = new TerminalMacro { Name = "Server login", Steps = [new() { Input = "connect\r" }, new() { Input = "example-user\r", ExpectedPrompt = "Username:" }, new() { Input = "SECRET-MUST-NOT-APPEAR\r", ExpectedPrompt = "Password:" }] };
         var editor = new MacroEditorWindow(macro);
-        Capture(editor, "macro-editor.png", 680, 480); editor.Close();
+        Capture(editor, "macro-editor.png", 880, 720);
+        Capture(editor, "macro-editor-small.png", 740, 580); editor.Close();
         Console.WriteLine("PASS macro settings navigation, cancel preserves preferences, and masked editor layout");
     }
 

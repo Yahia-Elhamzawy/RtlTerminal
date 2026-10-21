@@ -476,7 +476,10 @@
                 </Style>
             </TextBlock.Style>
         </TextBlock>
-        <Button x:Name="MacroStatusButton" DockPanel.Dock="Right" Visibility="Collapsed" Margin="4,0" Padding="6,0" Height="26" Style="{StaticResource WindowCaptionButtonStyle}" Click="MacroStatus_Click" ToolTip="Stop macro recording or playback" AutomationProperties.Name="Macro status and stop"/>
+        <Button x:Name="MacroStopButton" DockPanel.Dock="Right" Visibility="Collapsed" Width="26" Height="26" Content="■" Style="{StaticResource WindowCaptionButtonStyle}" Click="MacroStop_Click" ToolTip="Stop playback (Ctrl+Shift+Alt+End)" AutomationProperties.Name="Stop macro"/>
+        <Button x:Name="MacroStepButton" DockPanel.Dock="Right" Visibility="Collapsed" Width="26" Height="26" Content="▸|" Style="{StaticResource WindowCaptionButtonStyle}" Click="MacroStep_Click" ToolTip="Run one step, then pause" AutomationProperties.Name="Run one macro step"/>
+        <Button x:Name="MacroPauseButton" DockPanel.Dock="Right" Visibility="Collapsed" Width="26" Height="26" Content="Ⅱ" Style="{StaticResource WindowCaptionButtonStyle}" Click="MacroPause_Click" ToolTip="Pause / resume (Ctrl+Shift+Alt+P)" AutomationProperties.Name="Pause or resume macro"/>
+        <Button x:Name="MacroStatusButton" DockPanel.Dock="Right" Visibility="Collapsed" Margin="4,0" Padding="6,0" Height="26" Style="{StaticResource WindowCaptionButtonStyle}" Click="MacroStatus_Click" ToolTip="Stop recording / pause playback" AutomationProperties.Name="Macro status"/>
         <Button x:Name="HtmlPreviewButton" DockPanel.Dock="Right" Width="30" Height="26" Margin="8,0,0,0"
                 Style="{StaticResource WindowCaptionButtonStyle}" Click="HtmlPreviewButton_Click"
                 ToolTip="Preview this page in your browser" AutomationProperties.Name="HTML preview">

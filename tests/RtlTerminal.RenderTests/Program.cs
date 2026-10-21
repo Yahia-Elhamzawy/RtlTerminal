@@ -37,6 +37,7 @@ internal static partial class Program
         if (Environment.GetCommandLineArgs().Contains("--conpty-child")) { ConPtyPersianProbe.Child(); return; }
         if (Environment.GetCommandLineArgs().Contains("--conpty-persian")) { ConPtyPersianProbe.Run(); return; }
         MacroTests.Run().GetAwaiter().GetResult();
+        MacroV2Tests.Run().GetAwaiter().GetResult();
         CheckMacroUi();
         var view = new TerminalView
         {

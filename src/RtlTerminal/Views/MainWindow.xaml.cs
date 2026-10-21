@@ -1815,7 +1815,7 @@ ApplySavedFontSettings();
             if (ActiveView.HasSelection)
                 CopySelection();
             else
-                SendUserInput(ActivePane, "\x03");
+                SendUserKey(ActivePane, "\x03", Key.C, Keyboard.Modifiers);
 
             e.Handled = true;
             return;
@@ -1830,7 +1830,7 @@ ApplySavedFontSettings();
 
         if (controlPressed && GetEffectiveKey(e) == Key.Space)
         {
-            SendUserInput(ActivePane, "\0");
+            SendUserKey(ActivePane, "\0", Key.Space, Keyboard.Modifiers);
             e.Handled = true;
             return;
         }
@@ -1845,7 +1845,7 @@ ApplySavedFontSettings();
         if (controlPressed && e.Key >= Key.A && e.Key <= Key.Z)
         {
             var controlCharacter = (char)(e.Key - Key.A + 1);
-            SendUserInput(ActivePane, controlCharacter.ToString());
+            SendUserKey(ActivePane, controlCharacter.ToString(), e.Key, Keyboard.Modifiers);
             e.Handled = true;
             return;
         }
@@ -1873,7 +1873,7 @@ ApplySavedFontSettings();
         if (sequence is null)
             return;
 
-        SendUserInput(ActivePane, sequence);
+        SendUserKey(ActivePane, sequence, key, Keyboard.Modifiers);
         e.Handled = true;
     }
 
@@ -2140,6 +2140,7 @@ ApplySavedFontSettings();
 
             var snapshot = buffer.Process(output);
             pane.Playback?.Observe(snapshot);
+            pane.Recorder?.Observe(snapshot);
 
             foreach (var response in snapshot.Responses)
                 session.Write(response);
@@ -2392,6 +2393,7 @@ ApplySavedFontSettings();
         public string? WslDistribution { get; set; }
         public ConPtySession? Session { get; set; }
         public volatile MacroPlayback? Playback;
+        public volatile MacroRecorder? Recorder;
         public volatile bool SessionEnded;
         public TerminalBuffer? Buffer { get; set; }
         public CancellationTokenSource? CancellationTokenSource { get; set; }

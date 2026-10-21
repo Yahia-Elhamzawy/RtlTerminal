@@ -76,6 +76,7 @@ internal static class MacroTests
         store.Delete(macro.Id); Check(store.List().Count == 0, "Delete failed.");
         Directory.Delete(directory);
         await LiveLogin();
+        await LiveInterrupt();
         Console.WriteLine("PASS macro recording, prompt matching, stale output, cancellation, timeout, timed mode, encrypted storage, passwords and tampering");
     }
 
@@ -91,6 +92,18 @@ internal static class MacroTests
         SetStdHandle(-10, input); SetStdHandle(-11, output); SetConsoleMode(output, 7);
         Console.SetIn(new StreamReader(Console.OpenStandardInput(), Encoding.UTF8));
         Console.SetOut(new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false)) { AutoFlush = true });
+        if (Environment.GetCommandLineArgs().Contains("--interrupt"))
+        {
+            SetConsoleMode(input, 7);
+            using var interrupted = new ManualResetEventSlim();
+            Console.CancelKeyPress += (_, e) => { e.Cancel = true; interrupted.Set(); };
+            Console.Write("READY>");
+            if (Console.ReadLine() != "stream") return;
+            while (!interrupted.Wait(30)) Console.Write("\rSTREAMING...");
+            Console.Write("\r\nSHELL>");
+            Console.WriteLine(Console.ReadLine() == "exit" ? "INTERRUPT_OK" : "INTERRUPT_FAILED");
+            return;
+        }
         Console.Write("READY>");
         var command = Console.ReadLine();
         Console.Write("\x1b[32mUser"); Thread.Sleep(80); Console.Write("name: \x1b[0m");
@@ -140,6 +153,46 @@ internal static class MacroTests
         session.Dispose();
         await reader.WaitAsync(TimeSpan.FromSeconds(5));
         Console.WriteLine("PASS real ConPTY interactive login with delayed ANSI prompt and hidden password");
+    }
+
+    private static async Task LiveInterrupt()
+    {
+        using var session = new ConPtySession(80, 12);
+        var buffer = new TerminalBuffer(80, 12); var playback = new MacroPlayback();
+        var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        session.Start(ShellPath.WindowsArgument(Environment.ProcessPath!) + " --macro-child --interrupt", Environment.CurrentDirectory);
+        var reader = Task.Run(() =>
+        {
+            var bytes = new byte[8192]; var decoder = Encoding.UTF8.GetDecoder(); var chars = new char[8192];
+            try
+            {
+                int count;
+                while ((count = session.Read(bytes)) > 0)
+                {
+                    var snapshot = buffer.Process(new string(chars, 0, decoder.GetChars(bytes, 0, count, chars, 0)));
+                    playback.Observe(snapshot);
+                    foreach (var reply in snapshot.Responses) session.Write(reply);
+                    var text = string.Concat(snapshot.Lines.SelectMany(l => l.Runs).Select(r => r.Text));
+                    if (text.Contains("READY>")) ready.TrySetResult();
+                    if (text.Contains("INTERRUPT_OK")) done.TrySetResult();
+                }
+            }
+            catch (ObjectDisposedException) { }
+            catch (IOException) { }
+            finally { playback.Close(); }
+        });
+        await ready.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var recorder = new MacroRecorder(MacroMode.Interactive);
+        recorder.Record("stream\r", "READY>");
+        await Task.Delay(500);
+        recorder.RecordKey("\x03", "STREAMING...", "Ctrl+C", true);
+        recorder.Record("exit\r", "SHELL>");
+        var macro = recorder.Finish(); macro.Name = "Live interrupt";
+        await playback.RunAsync(macro, session.Write, 5, (_, _) => { }, CancellationToken.None);
+        await done.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        session.Dispose(); await reader.WaitAsync(TimeSpan.FromSeconds(5));
+        Console.WriteLine("PASS real ConPTY Ctrl+C interrupts continuous output and waits for the next shell prompt");
     }
 
     private static async Task WaitFor(Func<bool> predicate)

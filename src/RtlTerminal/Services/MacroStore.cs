@@ -8,7 +8,7 @@ namespace RtlTerminal;
 
 public sealed record MacroEntry(Guid Id, string Name, MacroMode Mode, int Shortcut, bool PasswordProtected)
 {
-    public override string ToString() => Name + (PasswordProtected ? "  🔒" : "") +
+    public override string ToString() => Name + " · " + Mode + (PasswordProtected ? " · Password protected" : " · Windows protected") +
         (Shortcut > 0 ? $"  (Ctrl+Shift+Alt+{Shortcut})" : "");
 }
 
@@ -46,7 +46,7 @@ public sealed class MacroStore
         try
         {
             var envelope = JsonSerializer.Deserialize<Envelope>(clear) ?? throw new InvalidDataException("Invalid macro file.");
-            if (envelope.Version != 1 || envelope.Entry.Id != id) throw new InvalidDataException("Unsupported macro file.");
+            if (envelope.Version is < 1 or > 2 || envelope.Entry.Id != id) throw new InvalidDataException("Unsupported macro file.");
             return envelope;
         }
         finally { CryptographicOperations.ZeroMemory(clear); }
@@ -62,8 +62,10 @@ public sealed class MacroStore
             .OrderBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).ToArray();
     }
 
-    public void Save(TerminalMacro macro, string? password)
+    public void Save(TerminalMacro macro, string? password, bool askSensitive = false)
     {
+        macro = MacroPrivacy.Prepare(macro, askSensitive);
+        macro.FormatVersion = 2;
         macro.Validate();
         EnsureDirectory();
         if (List().Any(e => e.Id != macro.Id && macro.Shortcut != 0 && e.Shortcut == macro.Shortcut))
@@ -89,7 +91,7 @@ public sealed class MacroStore
                 }
                 finally { CryptographicOperations.ZeroMemory(key); }
             }
-            var envelope = new Envelope(1, new(macro.Id, macro.Name, macro.Mode, macro.Shortcut, locked), payload, salt, nonce, tag);
+            var envelope = new Envelope(2, new(macro.Id, macro.Name, macro.Mode, macro.Shortcut, locked), payload, salt, nonce, tag);
             var clear = JsonSerializer.SerializeToUtf8Bytes(envelope);
             byte[] protectedBytes;
             try { protectedBytes = ProtectedData.Protect(clear, null, DataProtectionScope.CurrentUser); }

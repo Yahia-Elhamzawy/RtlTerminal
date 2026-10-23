@@ -12,6 +12,8 @@ permissions:
 jobs:
   release:
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
 
     steps:
       - name: Checkout
@@ -30,10 +32,33 @@ jobs:
           "version=$version" >> $env:GITHUB_OUTPUT
           "tag=v$version" >> $env:GITHUB_OUTPUT
 
+      - name: Check for an already published installer
+        id: published
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: pwsh
+        run: |
+          $json = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$env:TAG" 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            if (($json -join '') -notmatch '404') { throw "Unable to check release: $json" }
+            exit 0
+          }
+          $release = $json | ConvertFrom-Json
+          if ($release.draft -or $release.prerelease) { throw 'Expected a stable release.' }
+          $name = "RtlTerminal-Setup-$env:VERSION-x64.exe"
+          if ($release.assets | Where-Object name -eq $name) {
+            'exists=true' >> $env:GITHUB_OUTPUT
+            Write-Host 'Preserving the published installer so its WinGet SHA-256 remains valid.'
+          }
+
       - name: Install Inno Setup
+        if: steps.published.outputs.exists != 'true'
         run: choco install innosetup --no-progress -y
 
       - name: Publish application
+        if: steps.published.outputs.exists != 'true'
         run: >-
           dotnet publish src/RtlTerminal/RtlTerminal.csproj
           --configuration Release
@@ -45,12 +70,14 @@ jobs:
           --output artifacts/publish/win-x64
 
       - name: Build installer
+        if: steps.published.outputs.exists != 'true'
         shell: pwsh
         run: |
           $iscc = (Get-Command ISCC.exe -ErrorAction Stop).Source
           & $iscc "/DAppVersion=${{ steps.version.outputs.version }}" installer\RtlTerminal.iss
 
       - name: Create or update GitHub release
+        if: steps.published.outputs.exists != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
@@ -60,10 +87,19 @@ jobs:
           $installer = "artifacts/release/RtlTerminal-Setup-$env:VERSION-x64.exe"
           $releaseExists = gh release view $env:TAG 2>$null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $env:TAG $installer --clobber
+            gh release upload $env:TAG $installer
           } else {
             gh release create $env:TAG $installer `
               --title "RtlTerminal $env:VERSION" `
               --generate-notes `
               --target $env:GITHUB_SHA
           }
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub release publication failed.' }
+
+  winget:
+    needs: release
+    uses: ./.github/workflows/winget.yml
+    with:
+      version: ${{ needs.release.outputs.version }}
+    secrets:
+      WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}

@@ -1,0 +1,94 @@
+name: Publish to WinGet
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+    secrets:
+      WINGET_TOKEN:
+        required: false
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published stable version (for example 1.1.4)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: winget-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    runs-on: windows-latest
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ secrets.WINGET_TOKEN }}
+      WINGET_CREATE_GITHUB_TOKEN: ${{ secrets.WINGET_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check credentials and existing submissions
+        id: check
+        shell: pwsh
+        run: |
+          if ($env:VERSION -notmatch '^\d+\.\d+\.\d+$') { throw 'A stable version number is required.' }
+          if (-not $env:GH_TOKEN) { throw 'Add the WINGET_TOKEN repository Actions secret. See docs/winget.md.' }
+          $path = "manifests/b/behnamapps/RtlTerminal/$env:VERSION"
+          $existing = gh api "repos/microsoft/winget-pkgs/contents/$path" 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            'skip=true' >> $env:GITHUB_OUTPUT
+            'This version is already available in winget-pkgs.' >> $env:GITHUB_STEP_SUMMARY
+            exit 0
+          }
+          # A missing directory is expected; other API failures must not be ignored.
+          if (($existing -join '') -notmatch '404') { throw "Unable to check existing manifests: $existing" }
+          $query = "repo:microsoft/winget-pkgs is:pr is:open in:title behnamapps.RtlTerminal $env:VERSION"
+          $requests = gh api search/issues -X GET -f "q=$query" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to check open WinGet submissions.' }
+          if ($requests.total_count -gt 0) {
+            'skip=true' >> $env:GITHUB_OUTPUT
+            "Existing submission: $($requests.items[0].html_url)" >> $env:GITHUB_STEP_SUMMARY
+          }
+
+      - name: Download published installer and verify digest
+        if: steps.check.outputs.skip != 'true'
+        shell: pwsh
+        run: |
+          $release = gh api "repos/mirbehnam/RtlTerminal/releases/tags/v$env:VERSION" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $release.draft -or $release.prerelease) { throw 'A published stable release is required.' }
+          $name = "RtlTerminal-Setup-$env:VERSION-x64.exe"
+          $asset = @($release.assets | Where-Object name -eq $name)
+          if ($asset.Count -ne 1) { throw 'Expected exactly one x64 installer asset.' }
+          New-Item -ItemType Directory -Force artifacts/winget | Out-Null
+          Invoke-WebRequest $asset[0].browser_download_url -OutFile "artifacts/winget/$name"
+          $digest = 'sha256:' + (Get-FileHash "artifacts/winget/$name" -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($asset[0].digest -ne $digest) { throw 'Installer SHA-256 does not match the published release digest.' }
+          ./scripts/new-winget-manifest.ps1 -Version $env:VERSION -InstallerPath "artifacts/winget/$name"
+
+      - name: Validate manifests
+        if: steps.check.outputs.skip != 'true'
+        shell: pwsh
+        run: |
+          winget validate "artifacts/winget/manifests/b/behnamapps/RtlTerminal/$env:VERSION" --disable-interactivity
+          if ($LASTEXITCODE -ne 0) { throw 'WinGet manifest validation failed.' }
+
+      - uses: actions/upload-artifact@v4
+        if: steps.check.outputs.skip != 'true'
+        with:
+          name: winget-${{ inputs.version }}
+          path: artifacts/winget/manifests
+
+      - name: Submit to the WinGet community repository
+        if: steps.check.outputs.skip != 'true'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://aka.ms/wingetcreate/latest -OutFile artifacts/winget/wingetcreate.exe
+          & ./artifacts/winget/wingetcreate.exe submit --no-open --prtitle "New version: behnamapps.RtlTerminal version $env:VERSION" "artifacts/winget/manifests/b/behnamapps/RtlTerminal/$env:VERSION"
+          if ($LASTEXITCODE -ne 0) { throw 'WinGet pull request submission failed.' }
+          'WinGet submission sent. Availability requires approval by winget-pkgs.' >> $env:GITHUB_STEP_SUMMARY

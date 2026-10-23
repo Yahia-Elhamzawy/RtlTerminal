@@ -44,9 +44,13 @@ public partial class MainWindow : Window
     private Key? _pendingContextMenuKey;
     private (int X, int Y, int Button)? _lastReportedMouseCell;
 
-    public MainWindow()
+    public MainWindow() : this(new DirectoryHistoryStore()) { }
+
+    public MainWindow(DirectoryHistoryStore directoryHistory)
     {
+        _directoryHistory = directoryHistory;
         InitializeComponent();
+        InitializeDirectoryHistory();
         WireTerminalView(TerminalTextBox);
         UpdateShortcutLabels();
         LocationChanged += (_, _) => UpdatePaneSizing();
@@ -64,6 +68,8 @@ public partial class MainWindow : Window
 ApplySavedFontSettings();
         UpdateThemeMenu();
         UpdateFontMetrics();
+        InitializeUiLanguage();
+        InitializeWindowStatus();
         AllowDrop = true;
         PreviewDragOver += Window_PreviewDragOver;
         PreviewDrop += Window_PreviewDrop;
@@ -97,7 +103,7 @@ ApplySavedFontSettings();
         try { await DropIntoPaneAsync(pane, e.Data); }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
             System.Runtime.InteropServices.COMException or ArgumentException or NotSupportedException or System.ComponentModel.Win32Exception)
-        { MessageBox.Show(this, exception.Message, "Drop", MessageBoxButton.OK, MessageBoxImage.Error); }
+        { UiText.Show(this, exception.Message, "Drop", MessageBoxButton.OK, MessageBoxImage.Error); }
         if (ReferenceEquals(ActivePane, pane)) pane.View.Focus();
     }
 
@@ -216,13 +222,11 @@ ApplySavedFontSettings();
                 GetProfileCommand(pane.Profile, showIntroduction, pane.WslDistribution, wslDirectory),
                 pane.Profile == TerminalProfile.Wsl ? wslDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) : startupDirectory);
 
-            if (pane.Profile == TerminalProfile.CommandPrompt &&
-                startupDirectory is not null)
-            {
-                AppSettings.RememberCmdDirectory(startupDirectory);
-            }
+            if (pane.Profile != TerminalProfile.Wsl && startupDirectory is not null)
+                ObserveDirectory(pane, startupDirectory);
 
             _ = Task.Run(() => ReadOutputLoop(pane));
+            UpdateSelectedDirectory();
         }
         catch (Exception exception)
         {
@@ -264,7 +268,7 @@ ApplySavedFontSettings();
         {
             try { Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true }); }
             catch (Exception exception)
-            { MessageBox.Show(this, exception.Message, "Open link", MessageBoxButton.OK, MessageBoxImage.Error); }
+            { UiText.Show(this, exception.Message, "Open link", MessageBoxButton.OK, MessageBoxImage.Error); }
         };
         view.AddHandler(ScrollViewer.ScrollChangedEvent, new ScrollChangedEventHandler(TerminalTextBox_ScrollChanged));
         view.PreviewKeyDown += TerminalTextBox_PreviewKeyDown;
@@ -281,6 +285,8 @@ ApplySavedFontSettings();
 
     private void Window_Closed(object? sender, EventArgs e)
     {
+        UiText.Changed -= ApplyUiLanguage;
+        _directoryPollTimer.Stop();
         _macroCancellation?.Cancel();
         _macroRecorder = null;
         foreach (var pane in _tabs.SelectMany(tab => tab.Panes))
@@ -331,6 +337,7 @@ ApplySavedFontSettings();
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (HandleTabRenameKey(e)) return;
         if (HandleMacroKey(e)) { e.Handled = true; return; }
         var controlPressed = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
         var shiftPressed = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
@@ -395,7 +402,7 @@ ApplySavedFontSettings();
         TerminalProfile profile,
         string? wslDistribution = null)
     {
-        var item = new MenuItem { Header = new TextBlock { Text = header } };
+        var item = new MenuItem { Header = new TextBlock { Text = header }, Icon = CreateProfileIcon(profile) };
         item.Click += (_, _) => SelectTerminalProfile(profile, wslDistribution);
         menu.Items.Add(item);
     }
@@ -437,7 +444,7 @@ ApplySavedFontSettings();
     {
         if (ActiveBuffer is null)
         {
-            MessageBox.Show(
+            UiText.Show(
                 this,
                 "There is no active terminal session to export.",
                 "Export session",
@@ -448,7 +455,7 @@ ApplySavedFontSettings();
 
         var dialog = new SaveFileDialog
         {
-            Title = "Export terminal session",
+            Title = UiText.Get("Export terminal session"),
             Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
             DefaultExt = ".txt",
             AddExtension = true,
@@ -471,7 +478,7 @@ ApplySavedFontSettings();
                 UnauthorizedAccessException or
                 NotSupportedException)
         {
-            MessageBox.Show(
+            UiText.Show(
                 this,
                 $"The session could not be exported.{Environment.NewLine}{exception.Message}",
                 "Export session",
@@ -493,7 +500,7 @@ ApplySavedFontSettings();
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {
-            MessageBox.Show(this, exception.Message, "HTML preview", MessageBoxButton.OK, MessageBoxImage.Error);
+            UiText.Show(this, exception.Message, "HTML preview", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -516,38 +523,37 @@ ApplySavedFontSettings();
         object sender,
         RoutedEventArgs e)
     {
+        if (e.OriginalSource != sender) return;
         LastDirectoriesMenuItem.Items.Clear();
-
-        foreach (var directory in AppSettings.LoadLastCmdDirectories())
+        var entries = _directoryHistory.Snapshot();
+        foreach (var entry in entries.Take(DirectoryHistoryStore.MenuLimit))
         {
-            if (!Directory.Exists(directory))
-                continue;
-
             var item = new MenuItem
             {
                 Header = new TextBlock
                 {
-                    Text = directory,
+                    Text = entry.Path,
                     MaxWidth = 520,
                     TextTrimming = TextTrimming.CharacterEllipsis,
                     FlowDirection = FlowDirection.LeftToRight
                 },
-                ToolTip = directory
+                ToolTip = entry.Details
             };
-            item.Click += (_, _) => CreateTerminalTab(
-                TerminalProfile.CommandPrompt,
-                directory);
+            item.Click += (_, _) => OpenHistoryDirectory(entry);
             LastDirectoriesMenuItem.Items.Add(item);
         }
-
         if (LastDirectoriesMenuItem.Items.Count == 0)
         {
             LastDirectoriesMenuItem.Items.Add(new MenuItem
             {
-                Header = "No recent directories",
+                Header = UiText.Get("No recent directories"),
                 IsEnabled = false
             });
         }
+        LastDirectoriesMenuItem.Items.Add(new Separator());
+        var history = new MenuItem { Header = entries.Count > DirectoryHistoryStore.MenuLimit ? $"More… ({entries.Count} directories)" : "Manage history…" };
+        history.Click += (_, _) => ShowDirectoryHistory();
+        LastDirectoriesMenuItem.Items.Add(history);
     }
 
     private void TerminalTextBox_PreviewTextInput(
@@ -603,17 +609,17 @@ ApplySavedFontSettings();
     private ContextMenu CreateTerminalContextMenu()
     {
         var menu = new ContextMenu { Style = (Style)FindResource("DarkContextMenuStyle"), PlacementTarget = ActiveView };
-        var split = new MenuItem { Header = "Split pane", InputGestureText = _paneShortcuts.Split ? "Ctrl+Shift+D" : "" };
+        var split = new MenuItem { Header = UiText.Get("Split pane"), InputGestureText = _paneShortcuts.Split ? "Ctrl+Shift+D" : "" };
         split.Click += SplitPaneMenuItem_Click;
-        var closePane = new MenuItem { Header = "Close pane", InputGestureText = _paneShortcuts.Close ? "Ctrl+Shift+W" : "", IsEnabled = _activeTab?.Panes.Count > 1 };
+        var closePane = new MenuItem { Header = UiText.Get("Close pane"), InputGestureText = _paneShortcuts.Close ? "Ctrl+Shift+W" : "", IsEnabled = _activeTab?.Panes.Count > 1 };
         closePane.Click += ClosePaneMenuItem_Click;
-        var movePane = new MenuItem { Header = "Move pane to a new tab", IsEnabled = _activeTab?.Panes.Count > 1 };
+        var movePane = new MenuItem { Header = UiText.Get("Move pane to a new tab"), IsEnabled = _activeTab?.Panes.Count > 1 };
         movePane.Click += MovePaneMenuItem_Click;
-        var copy = new MenuItem { Header = "_Copy", IsEnabled = ActiveView.HasSelection };
+        var copy = new MenuItem { Header = UiText.Get("_Copy"), IsEnabled = ActiveView.HasSelection };
         copy.Click += (_, _) => CopySelection();
-        var paste = new MenuItem { Header = "_Paste", IsEnabled = ActiveSession is not null };
+        var paste = new MenuItem { Header = UiText.Get("_Paste"), IsEnabled = ActiveSession is not null };
         paste.Click += (_, _) => PasteClipboard();
-        var select = new MenuItem { Header = "Select _all" };
+        var select = new MenuItem { Header = UiText.Get("Select _all") };
         select.Click += (_, _) => ActiveView.SelectAll();
         menu.Items.Add(copy); menu.Items.Add(paste); menu.Items.Add(new Separator()); menu.Items.Add(select);
         menu.Items.Add(new Separator()); menu.Items.Add(split); menu.Items.Add(movePane); menu.Items.Add(closePane);
@@ -809,12 +815,14 @@ ApplySavedFontSettings();
         };
 
         if (openThemeTab) settingsWindow.ShowThemeTab();
+        settingsWindow.SetDirectoryHistoryEnabled(_directoryHistory.Enabled);
         if (openMacroTab) settingsWindow.ShowMacroTab();
 
         if (settingsWindow.ShowDialog() != true)
             return;
 
         _macroSettings = settingsWindow.SelectedMacroSettings;
+        _directoryHistory.SetEnabled(settingsWindow.SelectedDirectoryHistoryEnabled);
         _macroSettings.Save();
         ApplyHistorySize(settingsWindow.SelectedHistorySize);
         ApplyFontSettings(settingsWindow.SelectedSettings);
@@ -887,7 +895,7 @@ ApplySavedFontSettings();
     private void UpdateThemeMenu()
     {
         DarkModeButton.IsChecked = !AppTheme.IsLight;
-        DarkModeButton.ToolTip = AppTheme.IsLight ? "Switch to dark mode" : "Switch to Gruvbox Light";
+        DarkModeButton.ToolTip = UiText.Get(AppTheme.IsLight ? "Switch to dark mode" : "Switch to Gruvbox Light");
     }
 
     private async void CheckForUpdatesMenuItem_Click(
@@ -914,7 +922,7 @@ ApplySavedFontSettings();
         {
             if (manual)
             {
-                MessageBox.Show(
+                UiText.Show(
                     this,
                     "An update check is already in progress.",
                     "Check for updates",
@@ -927,10 +935,9 @@ ApplySavedFontSettings();
 
         _updateCheckInProgress = true;
         CheckForUpdatesMenuItem.IsEnabled = false;
-        var originalHeader = CheckForUpdatesMenuItem.Header;
 
         if (manual)
-            CheckForUpdatesMenuItem.Header = "Checking for updates...";
+            CheckForUpdatesMenuItem.SetCurrentValue(MenuItem.HeaderProperty, UiText.Get("Checking for updates..."));
 
         try
         {
@@ -940,7 +947,7 @@ ApplySavedFontSettings();
             {
                 if (manual)
                 {
-                    MessageBox.Show(
+                    UiText.Show(
                         this,
                         $"Rtl Terminal {result.CurrentVersion.ToString(3)} is up to date.",
                         "Check for updates",
@@ -969,9 +976,9 @@ ApplySavedFontSettings();
         {
             if (manual)
             {
-                MessageBox.Show(
+                UiText.Show(
                     this,
-                    "Rtl Terminal could not check GitHub for updates.\n\n" +
+                    UiText.Get("Rtl Terminal could not check GitHub for updates.") + "\n\n" +
                     exception.Message,
                     "Check for updates",
                     MessageBoxButton.OK,
@@ -980,7 +987,7 @@ ApplySavedFontSettings();
         }
         finally
         {
-            CheckForUpdatesMenuItem.Header = originalHeader;
+            CheckForUpdatesMenuItem.SetCurrentValue(MenuItem.HeaderProperty, UiText.Get("Check for _updates..."));
             CheckForUpdatesMenuItem.IsEnabled = true;
             _updateCheckInProgress = false;
         }
@@ -1024,9 +1031,9 @@ ApplySavedFontSettings();
             exception is InvalidOperationException or
                 System.ComponentModel.Win32Exception)
         {
-            MessageBox.Show(
+            UiText.Show(
                 this,
-                "The update page could not be opened.\n\n" + exception.Message,
+                UiText.Get("The update page could not be opened.") + "\n\n" + exception.Message,
                 "Rtl Terminal update",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
@@ -1035,17 +1042,9 @@ ApplySavedFontSettings();
 
     private void AboutMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        MessageBox.Show(
+        UiText.Show(
             this,
-            """
-            Rtl Terminal
-            by behnamapps
-
-            Developer: behnam tajadini
-            YouTube: aka_techno
-
-            تقدیم به همه فارسی زبانان
-            """,
+            "Rtl Terminal\nby behnamapps\n\n" + UiText.Get("Developer") + ": behnam tajadini\nYouTube: aka_techno\n\n" + UiText.Get("Dedicated to all Persian speakers"),
             "About Rtl Terminal",
             MessageBoxButton.OK,
             MessageBoxImage.Information);
@@ -1067,9 +1066,9 @@ ApplySavedFontSettings();
         }
         catch (Exception exception)
         {
-            MessageBox.Show(
+            UiText.Show(
                 this,
-                "تغییر منوی راست‌کلیک انجام نشد." +
+                UiText.Get("Could not change the folder context menu.") +
                 Environment.NewLine +
                 exception.Message,
                 "RtlTerminal",
@@ -1088,9 +1087,9 @@ ApplySavedFontSettings();
         if (ContextMenuIntegration.HasAnsweredInitialPrompt())
             return;
 
-        var result = MessageBox.Show(
+        var result = UiText.Show(
             this,
-            "آیا گزینه «Open in RtlTerminal» به منوی راست‌کلیک پوشه‌ها اضافه شود؟",
+            "Add 'Open in RtlTerminal' to the folder context menu?",
             "RtlTerminal",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question);
@@ -1102,9 +1101,9 @@ ApplySavedFontSettings();
         }
         catch (Exception exception)
         {
-            MessageBox.Show(
+            UiText.Show(
                 this,
-                "افزودن منوی راست‌کلیک انجام نشد." +
+                UiText.Get("Could not add the folder context menu.") +
                 Environment.NewLine +
                 exception.Message,
                 "RtlTerminal",
@@ -1123,10 +1122,10 @@ ApplySavedFontSettings();
         _updatingContextMenuItem = true;
         ContextMenuIntegrationMenuItem.IsChecked =
             ContextMenuIntegration.IsInstalled();
-        ContextMenuIntegrationMenuItem.Header =
+        ContextMenuIntegrationMenuItem.SetCurrentValue(MenuItem.HeaderProperty, UiText.Get(
             ContextMenuIntegrationMenuItem.IsChecked
                 ? "Remove _Open in RtlTerminal"
-                : "Add _Open in RtlTerminal";
+                : "Add _Open in RtlTerminal"));
         _updatingContextMenuItem = false;
     }
 
@@ -1210,6 +1209,8 @@ ApplySavedFontSettings();
                 C:\Windows\System32\cmd.exe /D /Q /V:OFF /K "chcp 65001>nul & echo RtlTerminal v{APP_VERSION}& echo.& echo Author : Behnam Tajadini& echo Source : github.com/mirbehnam/RtlTerminal& echo YouTube: @aka_techno& echo."
                 """
         }).Replace("{APP_VERSION}", AppVersion.Display);
+        if (showIntroduction)
+            command = command.Replace("YouTube: @aka_techno", StartupSocialLine(Random.Shared.Next(2) == 0));
         if (profile == TerminalProfile.PowerShell && showIntroduction)
             command = command.Replace("-Command \"", "-Command \"" + powerShellDirectoryPrompt);
         return command;
@@ -1249,13 +1250,17 @@ ApplySavedFontSettings();
     }
 
     private async void OpenDirectoryMenuItem_Click(object sender, RoutedEventArgs e)
+        => await OpenPaneDirectoryAsync(ExplorerTargetPane());
+
+    private async Task OpenPaneDirectoryAsync(TerminalPane? pane)
     {
-        var pane = ExplorerTargetPane();
         if (pane is null) return;
         OpenDirectoryMenuItem.IsEnabled = false;
+        ActiveDirectoryButton.IsEnabled = false;
         try
         {
             var directory = await ReadExplorerDirectoryAsync(pane);
+            SetPaneDirectory(pane, directory);
             if (directory is null || !await Task.Run(() => Directory.Exists(directory)))
                 throw new IOException("The current directory is unavailable. Return to the shell prompt and try again.");
             Process.Start(new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"))
@@ -1265,9 +1270,9 @@ ApplySavedFontSettings();
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or System.ComponentModel.Win32Exception)
         {
-            MessageBox.Show(this, exception.Message, "Open directory", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiText.Show(this, exception.Message, "Open directory", MessageBoxButton.OK, MessageBoxImage.Information);
         }
-        finally { OpenDirectoryMenuItem.IsEnabled = true; }
+        finally { OpenDirectoryMenuItem.IsEnabled = true; RefreshActiveDirectory(); }
     }
     private TerminalView ActiveView => ActivePane?.View ?? TerminalTextBox;
     private ConPtySession? ActiveSession => ActivePane?.Session;
@@ -1280,8 +1285,10 @@ ApplySavedFontSettings();
 
     private void ShowTab(TerminalTab tab)
     {
+        if (_renamingTab is not null && !ReferenceEquals(_renamingTab, tab)) FinishTabRename(true, false, false);
         StorePaneSizes();
         _activeTab = tab;
+        UpdateSelectedDirectory();
         LayoutPanes();
         RebuildTabStrip();
         RenderVisiblePanes();
@@ -1311,7 +1318,7 @@ ApplySavedFontSettings();
         return required.Width <= width + .5 && required.Height <= height + .5;
     }
 
-    private void ShowPaneSpaceMessage() => MessageBox.Show(this,
+    private void ShowPaneSpaceMessage() => UiText.Show(this,
         "There is not enough room for all panes. Enlarge the window and try again.",
         "Split terminals", MessageBoxButton.OK, MessageBoxImage.Information);
 
@@ -1435,6 +1442,7 @@ ApplySavedFontSettings();
             return;
 
         _activeTab.ActivePane = pane;
+        UpdateSelectedDirectory();
         pane.Frame.BringIntoView();
         UpdatePaneFrames();
         RebuildTabStrip();
@@ -1559,7 +1567,7 @@ ApplySavedFontSettings();
 
     private MenuItem CreateTabColorMenu(TerminalTab tab)
     {
-        var colorMenu = new MenuItem { Header = "Color..." };
+        var colorMenu = new MenuItem { Header = UiText.Get("Color...") };
         var palette = new System.Windows.Controls.Primitives.UniformGrid { Columns = 6, Margin = new Thickness(2) };
         foreach (var (name, color) in TabColors.Palette)
         {
@@ -1583,7 +1591,7 @@ ApplySavedFontSettings();
         }
         colorMenu.Items.Add(new MenuItem { Header = palette, StaysOpenOnClick = true, Focusable = false });
         colorMenu.Items.Add(new Separator());
-        var custom = new MenuItem { Header = "Custom color..." };
+        var custom = new MenuItem { Header = UiText.Get("Custom color...") };
         custom.Click += (_, _) =>
         {
             // Open after the menu finishes closing so focus returns to the terminal cleanly.
@@ -1594,7 +1602,7 @@ ApplySavedFontSettings();
                 if (color is { } selected) SetTabColor(tab, selected);
             });
         };
-        var reset = new MenuItem { Header = "Reset color", IsEnabled = tab.BackgroundColor is not null };
+        var reset = new MenuItem { Header = UiText.Get("Reset color"), IsEnabled = tab.BackgroundColor is not null };
         reset.Click += (_, _) => SetTabColor(tab, null);
         colorMenu.Items.Add(custom); colorMenu.Items.Add(reset);
         return colorMenu;
@@ -1605,17 +1613,17 @@ ApplySavedFontSettings();
         var menu = new ContextMenu { Style = (Style)FindResource("DarkContextMenuStyle") };
         var split = new MenuItem
         {
-            Header = "Split tab", Tag = tab,
+            Header = UiText.Get("Split tab"), Tag = tab,
             InputGestureText = _paneShortcuts.Split ? "Ctrl+Shift+D" : ""
         };
         split.Click += SplitTabMenuItem_Click;
         var join = new MenuItem
         {
-            Header = "Show side by side with the current tab",
+            Header = UiText.Get("Show side by side with the current tab"),
             IsEnabled = !ReferenceEquals(tab, _activeTab)
         };
         join.Click += (_, _) => JoinTab(tab);
-        var close = new MenuItem { Header = "Close tab" };
+        var close = new MenuItem { Header = UiText.Get("Close tab") };
         close.Click += (_, _) => CloseTab(tab);
         menu.Items.Add(split); menu.Items.Add(join);
         menu.Items.Add(new Separator()); menu.Items.Add(CreateTabColorMenu(tab));
@@ -1635,7 +1643,7 @@ ApplySavedFontSettings();
         }
 
         if (JoinTabMenuItem.Items.Count == 0)
-            JoinTabMenuItem.Items.Add(new MenuItem { Header = "No other tabs", IsEnabled = false });
+            JoinTabMenuItem.Items.Add(new MenuItem { Header = UiText.Get("No other tabs"), IsEnabled = false });
     }
 
     private void MovePaneMenuItem_Click(object sender, RoutedEventArgs e) => MovePaneToNewTab(ActivePane);
@@ -1678,45 +1686,54 @@ ApplySavedFontSettings();
 
     private void RebuildTabStrip()
     {
+        _tabRenameEditor = null;
+        if (_renamingTab is not null && !_tabs.Contains(_renamingTab)) { _renamingTab = null; _tabRenameDraft = ""; }
+        Title = _activeTab?.Title ?? "RtlTerminal";
         MovePaneMenuItem.IsEnabled = _activeTab is { Panes.Count: > 1 } tabGroup && tabGroup.Panes.Contains(tabGroup.ActivePane);
         TabStrip.Children.Clear();
         foreach (var tab in _tabs)
         {
             var isActive = ReferenceEquals(tab, _activeTab);
-            var accent = new SolidColorBrush(AppTheme.TabAccent);
-            var customText = tab.BackgroundColor is { } tabColor ? new SolidColorBrush(TabColors.TextColor(tabColor)) : null;
-            var panel = new DockPanel { Height = 34 };
+            var chromeColor = ((SolidColorBrush)FindResource("TitleBarBrush")).Color;
+            var displayColor = tab.BackgroundColor is { } tabColor ? TabColors.DisplayColor(tabColor, isActive, chromeColor) : (Color?)null;
+            var customText = displayColor is { } background ? new SolidColorBrush(TabColors.TextColor(background)) : null;
+            var panel = new DockPanel { Height = 28 };
             var closeButton = new Button
             {
-                Width = 26, Height = 24, Margin = new Thickness(0, 0, 5, 0),
-                Content = "×", FontSize = 15,
+                Name = "CloseTabButton", Width = 24, Height = 24, Margin = new Thickness(0, 0, 5, 0),
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 ToolTip = $"Close {tab.Title}", Tag = tab,
-                Style = (Style)FindResource("ChromeRoundButtonStyle")
+                Style = (Style)FindResource("TabCloseButtonStyle")
             };
+            var closeGlyph = new System.Windows.Shapes.Path
+            {
+                Width = 8, Height = 8, Data = Geometry.Parse("M0,0 L8,8 M8,0 L0,8"), StrokeThickness = 1
+            };
+            closeGlyph.SetBinding(System.Windows.Shapes.Shape.StrokeProperty, new System.Windows.Data.Binding("Foreground") { Source = closeButton });
+            closeButton.Content = closeGlyph;
             System.Windows.Automation.AutomationProperties.SetName(closeButton, $"Close {tab.Title}");
             if (customText is not null) closeButton.Foreground = customText;
             closeButton.Click += TabCloseButton_Click;
             DockPanel.SetDock(closeButton, Dock.Right);
             panel.Children.Add(closeButton);
             var label = new DockPanel();
-            var icon = new TextBlock
-            {
-                Text = tab.Profile == TerminalProfile.PowerShell ? "›_" :
-                    tab.Profile == TerminalProfile.Wsl ? "$_" : ">_",
-                FontFamily = new FontFamily("Consolas"), FontSize = 13,
-                Foreground = customText ?? (isActive ? accent : new SolidColorBrush(AppTheme.TabIcon)),
-                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0)
-            };
+            var icon = CreateProfileIcon(tab.Profile);
+            icon.Margin = new Thickness(0,0,8,0);
             DockPanel.SetDock(icon, Dock.Left);
             label.Children.Add(icon);
-            label.Children.Add(new TextBlock
+            var tabTitle = new TextBlock
             {
                 Text = tab.Title, FontFamily = new FontFamily("Segoe UI"), FontSize = 12,
                 FontWeight = isActive ? FontWeights.SemiBold : FontWeights.Normal,
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 VerticalAlignment = VerticalAlignment.Center
-            });
+            };
+            tabTitle.MouseLeftButtonDown += (_, e) =>
+            {
+                if (e.ClickCount != 2) return;
+                e.Handled = true; BeginTabRename(tab);
+            };
+            label.Children.Add(ReferenceEquals(_renamingTab, tab) ? CreateTabRenameEditor(tab) : tabTitle);
             var selectButton = new Button
             {
                 Content = label, HorizontalContentAlignment = HorizontalAlignment.Stretch,
@@ -1729,22 +1746,25 @@ ApplySavedFontSettings();
             selectButton.Click += TabButton_Click;
             selectButton.ContextMenu = CreateTabContextMenu(tab);
             panel.Children.Add(selectButton);
-            var grid = new Grid { Width = 220, Height = 38, Margin = new Thickness(0, 8, 0, 0), Background = Brushes.Transparent, Tag = tab };
+            var grid = new Grid { Width = 248, Height = 32, Margin = new Thickness(-4, 8, -4, 0), Background = Brushes.Transparent, Tag = tab };
+            Panel.SetZIndex(grid, isActive ? 10 : 0);
             grid.ContextMenu = selectButton.ContextMenu;
-            var activeBrush = new SolidColorBrush(tab.BackgroundColor ?? AppTheme.ActiveTab);
+            var activeBrush = new SolidColorBrush(displayColor ?? AppTheme.ActiveTab);
             var shape = new System.Windows.Shapes.Path
             {
-                Data = Geometry.Parse("M0,38 Q8,38 8,30 L8,12 Q8,0 20,0 L200,0 Q212,0 212,12 L212,30 Q212,38 220,38 Z"),
+                Data = isActive
+                    ? Geometry.Parse("M0,32 Q4,32 4,28 L4,8 A8,8 0 0 1 12,0 L236,0 A8,8 0 0 1 244,8 L244,28 Q244,32 248,32 Z")
+                    : Geometry.Parse("M4,32 L4,8 A8,8 0 0 1 12,0 L236,0 A8,8 0 0 1 244,8 L244,32 Z"),
                 Fill = tab.BackgroundColor is not null || isActive ? activeBrush : Brushes.Transparent, IsHitTestVisible = false,
-                Stroke = tab.BackgroundColor is not null && isActive ? accent : null, StrokeThickness = 1
+                Stroke = null, StrokeThickness = 0
             };
             grid.Children.Add(shape);
             if (!isActive && tab.BackgroundColor is null) grid.Children.Add(new Border
             {
                 Width = 1, Height = 18, Background = new SolidColorBrush(AppTheme.TabSeparator),
-                HorizontalAlignment = HorizontalAlignment.Right, IsHitTestVisible = false
+                HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0,0,4,0), IsHitTestVisible = false
             });
-            panel.Margin = new Thickness(8, 0, 8, 0);
+            panel.Margin = new Thickness(0, 0, 4, 0);
             grid.Children.Add(panel);
             grid.MouseEnter += (_, _) => shape.Fill = tab.BackgroundColor is not null || isActive ? activeBrush : new SolidColorBrush(AppTheme.HoverTab);
             grid.MouseLeave += (_, _) => shape.Fill = tab.BackgroundColor is not null || isActive ? activeBrush : Brushes.Transparent;
@@ -1756,7 +1776,7 @@ ApplySavedFontSettings();
 
     private void TitleTabsHost_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        TabScroller.MaxWidth = Math.Max(0, e.NewSize.Width - 66);
+        TabScroller.MaxWidth = Math.Max(0, e.NewSize.Width - 72 - (AdministratorBadge?.Visibility == Visibility.Visible ? 30 : 0));
     }
 
     private void TabScroller_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -1988,7 +2008,7 @@ ApplySavedFontSettings();
         try { ActiveView.CopySelection(); }
         catch (System.Runtime.InteropServices.ExternalException)
         {
-            MessageBox.Show(this, "The clipboard is busy. Please try copying again.", "Clipboard", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiText.Show(this, "The clipboard is busy. Please try copying again.", "Clipboard", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 
@@ -1997,10 +2017,10 @@ ApplySavedFontSettings();
         try { await PasteClipboardCoreAsync(); }
         catch (System.Runtime.InteropServices.ExternalException)
         {
-            MessageBox.Show(this, "The clipboard is busy. Please try pasting again.", "Clipboard", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiText.Show(this, "The clipboard is busy. Please try pasting again.", "Clipboard", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or System.ComponentModel.Win32Exception)
-        { MessageBox.Show(this, exception.Message, "Paste", MessageBoxButton.OK, MessageBoxImage.Error); }
+        { UiText.Show(this, exception.Message, "Paste", MessageBoxButton.OK, MessageBoxImage.Error); }
     }
 
     private async Task PasteClipboardCoreAsync()
@@ -2141,6 +2161,7 @@ ApplySavedFontSettings();
             var snapshot = buffer.Process(output);
             pane.Playback?.Observe(snapshot);
             pane.Recorder?.Observe(snapshot);
+            ObserveDirectory(pane, TerminalDirectory.FromReport(snapshot.WorkingDirectory, pane.WslDistribution));
 
             foreach (var response in snapshot.Responses)
                 session.Write(response);
@@ -2373,8 +2394,9 @@ ApplySavedFontSettings();
         public List<TerminalPane> Panes { get; } = [pane];
         public TerminalPane ActivePane { get; set; } = pane;
         public Color? BackgroundColor { get; set; }
+        public string? CustomTitle { get; set; }
         public TerminalProfile Profile => ActivePane.Profile;
-        public string Title => Panes.Count > 1 ? $"{ActivePane.Title} (+{Panes.Count - 1})" : ActivePane.Title;
+        public string Title => CustomTitle ?? (Panes.Count > 1 ? $"{ActivePane.Title} (+{Panes.Count - 1})" : ActivePane.Title);
     }
 
     private sealed class TerminalPane(
@@ -2394,6 +2416,10 @@ ApplySavedFontSettings();
         public ConPtySession? Session { get; set; }
         public volatile MacroPlayback? Playback;
         public volatile MacroRecorder? Recorder;
+        public object DirectoryHistoryGate { get; } = new();
+        public string? CurrentDirectory { get; set; }
+        public string? LastHistoryDirectory { get; set; }
+        public bool DirectoryPollPending { get; set; }
         public volatile bool SessionEnded;
         public TerminalBuffer? Buffer { get; set; }
         public CancellationTokenSource? CancellationTokenSource { get; set; }

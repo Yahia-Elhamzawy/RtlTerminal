@@ -115,6 +115,10 @@ public static class AppTheme
         Set("TerminalForegroundBrush", 230, 230, 230, 36, 41, 47);
         Set("TitleBarBrush", 32, 33, 36, 222, 226, 231);
         Set("ToolbarBrush", 48, 49, 52, 246, 248, 250);
+        Set("TabRenameBackgroundBrush", 24, 25, 28, 255, 255, 255);
+        Set("DirectoryBadgeBrush", 39, 40, 43, 233, 236, 240);
+        Set("DirectoryBadgeHoverBrush", 42, 43, 46, 230, 233, 237);
+        Set("DirectoryBadgeForegroundBrush", 198, 203, 210, 78, 87, 98);
         Set("ToolbarBorderBrush", 60, 64, 67, 208, 215, 222);
         Set("ChromeForegroundBrush", 240, 240, 240, 31, 35, 40);
         Set("ChromeStrongForegroundBrush", 255, 255, 255, 0, 0, 0);

@@ -28,6 +28,13 @@ internal static class TabColors
         return (luminance + .05) / .05 >= 1.05 / (luminance + .05) ? Colors.Black : Colors.White;
     }
 
+    public static Color DisplayColor(Color selectedColor, bool active, Color chrome)
+    {
+        if (active) return selectedColor;
+        static byte Mix(byte color, byte backdrop) => (byte)Math.Round(color * .70 + backdrop * .30);
+        return Color.FromRgb(Mix(selectedColor.R, chrome.R), Mix(selectedColor.G, chrome.G), Mix(selectedColor.B, chrome.B));
+    }
+
     // The Windows color dialog supplies full RGB selection and custom color slots.
     private static readonly int[] CustomColors = Enumerable.Repeat(0xFFFFFF, 16).ToArray();
     public static Color? ChooseCustom(Window owner, Color initial)

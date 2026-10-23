@@ -49,17 +49,20 @@ internal static partial class Program
         var strip=(StackPanel)window.FindName("TabStrip");
         var firstGrid=(Grid)strip.Children[0];
         var path=firstGrid.Children.OfType<System.Windows.Shapes.Path>().Single();
-        if(((SolidColorBrush)path.Fill).Color!=color || firstGrid.ContextMenu is null)
-            throw new Exception("Inactive tab color or full-tab context menu missing");
+        if(((SolidColorBrush)path.Fill).Color==color || ((SolidColorBrush)path.Fill).Color.A != 255 || firstGrid.ContextMenu is null)
+            throw new Exception("Inactive tab must retain a muted opaque color and its context menu");
         var panel=firstGrid.Children.OfType<DockPanel>().Single();
         var label=panel.Children.OfType<Button>().Single(b=>b.Content is DockPanel);
-        var close=panel.Children.OfType<Button>().Single(b=>Equals(b.Content,"×"));
+        var close=panel.Children.OfType<Button>().Single(b=>b.Name=="CloseTabButton");
         if(((SolidColorBrush)label.Foreground).Color!=Colors.Black || ((SolidColorBrush)close.Foreground).Color!=Colors.Black)
             throw new Exception("Bright tab colors have unreadable text or close control");
         AppTheme.Apply(AppThemeKind.Light); Call("RebuildTabStrip"); Layout();
         if(ColorOf(first)!=color) throw new Exception("Theme switching lost custom tab colors");
         Call("SelectTab",first); Layout();
         if(ColorOf(first)!=color) throw new Exception("Selecting a tab lost its color");
+        var selectedPath=((Grid)strip.Children[0]).Children.OfType<System.Windows.Shapes.Path>().Single();
+        if(((SolidColorBrush)selectedPath.Fill).Color!=color || selectedPath.Stroke is not null)
+            throw new Exception("Selected tab must use its original color without an outline");
         menu=Menu(second); colors=Item(menu,"Color...");
         swatches=(UniformGrid)((MenuItem)colors.Items[0]).Header;
         swatches.Children.OfType<Button>().Single(b=>Equals(b.ToolTip,"Blue")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));

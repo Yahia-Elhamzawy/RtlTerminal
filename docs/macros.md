@@ -1,4 +1,4 @@
-# Terminal macros (experimental branch)
+# Terminal macros
 
 Open **Tools → Macros → Start recording** in the terminal pane you want to record. Type the command and respond to its prompts. Choose **Stop recording** (the same menu item), or click the recording indicator beside the preview controls. Enter a name, optionally assign a password and a shortcut, review the expected prompts, and save.
 
@@ -51,4 +51,4 @@ The render test suite includes real ConPTY login with a split ANSI prompt and hi
 
 پاسخ متفاوت سرور تا پایان مهلت منتظر می‌ماند؛ سپس امکان انتظار مجدد، اصلاح شرط برای همان اجرا یا پایان اجرا نمایش داده می‌شود. فرمان قبلی تکرار نمی‌شود. میانبر مکث/ادامه **Ctrl+Shift+Alt+P** و پایان اجرا **Ctrl+Shift+Alt+End** است. مکث ماکرو، سرور را متوقف نمی‌کند. مدیریت ماکروها جست‌وجو و اجرای مرحله‌ای دارد.
 
-This work lives on `feature/secure-terminal-macros`. It must not be merged into `main` until the user approves the trial.
+Terminal macros are available on the main branch. See the README for build and release instructions.

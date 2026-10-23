@@ -44,6 +44,7 @@ public partial class FontSettingsWindow : Window
     {
         InitializeComponent();
         InitializeMacroSettings();
+        InitializeDirectoryHistorySettings();
         _fontFamilies = Fonts.SystemFontFamilies
             .Select(font => font.Source)
             .Distinct(StringComparer.CurrentCultureIgnoreCase)
@@ -207,7 +208,7 @@ public partial class FontSettingsWindow : Window
 
         if (string.IsNullOrWhiteSpace(family))
         {
-            MessageBox.Show(
+            UiText.Show(
                 this,
                 "Please select a font.",
                 "Rtl Terminal",

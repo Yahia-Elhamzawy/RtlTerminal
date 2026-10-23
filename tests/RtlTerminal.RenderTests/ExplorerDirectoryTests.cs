@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using RtlTerminal;
+using Microsoft.Win32;
 
 internal static partial class Program
 {
@@ -26,7 +27,9 @@ internal static partial class Program
             throw new Exception("Explorer directory conversion accepted a relative/non-file path or lost a Unicode/WSL path");
 
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
-        var window = new MainWindow();
+        var historyRegistry = @"Software\RtlTerminal.Tests\LiveHistory-" + Guid.NewGuid().ToString("N");
+        var history = new DirectoryHistoryStore(historyRegistry);
+        var window = new MainWindow(history);
         var profileType = typeof(MainWindow).GetNestedType("TerminalProfile", BindingFlags.NonPublic)!;
         var tabType = typeof(MainWindow).GetNestedType("TerminalTab", BindingFlags.NonPublic)!;
         var tabs = (IList)typeof(MainWindow).GetField("_tabs", flags)!.GetValue(window)!;
@@ -78,6 +81,9 @@ internal static partial class Program
                 if (!ReferenceEquals(Call("ExplorerTargetPane"), pane)) throw new Exception("Explorer selected the wrong split pane");
                 WaitDirectory(pane, locations[panes.IndexOf(pane)]);
             }
+            foreach (var path in locations)
+                if (!history.Snapshot().Any(e => string.Equals(e.Path, path, StringComparison.OrdinalIgnoreCase) && e.LastVisitedUtc is not null))
+                    throw new Exception("Live CMD/PowerShell directory changes in split panes were not recorded.");
             var selected = Get(joined, "ActivePane");
             var direction = Enum.Parse(typeof(MainWindow).GetNestedType("PaneSplitDirection", BindingFlags.NonPublic)!, "SideBySide");
             var newest = Call("AddSplitPane", joined, panes[0], direction)!;
@@ -91,6 +97,7 @@ internal static partial class Program
             var shutdown = tabs.Cast<object>().SelectMany(t => ((IList)Get(t, "Panes")!).Cast<object>())
                 .Select(p => (Task)p.GetType().GetMethod("DisposeAsync")!.Invoke(p, null)!).ToArray();
             Task.WaitAll(shutdown, TimeSpan.FromSeconds(10)); window.Close();
+            Registry.CurrentUser.DeleteSubKeyTree(historyRegistry, false);
             var watch = Stopwatch.StartNew();
             while (true)
             {

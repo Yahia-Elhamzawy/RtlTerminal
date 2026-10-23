@@ -6,6 +6,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Threading;
 using RtlTerminal;
+using Microsoft.Win32;
 
 // Opt-in: exercises actual WSL startup through MainWindow/ConPTY without changing
 // the installed distributions, default Linux shell, or saved application settings.
@@ -15,7 +16,9 @@ internal static class WslLaunchProbe
     {
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
         var profile = Enum.Parse(typeof(MainWindow).GetNestedType("TerminalProfile", BindingFlags.NonPublic)!, "Wsl");
-        var window = new MainWindow();
+        var historyRegistry = @"Software\RtlTerminal.Tests\WslHistory-" + Guid.NewGuid().ToString("N");
+        var history = new DirectoryHistoryStore(historyRegistry);
+        var window = new MainWindow(history);
         var directory = Path.Combine(Environment.CurrentDirectory, "artifacts", "wsl launch 'space " + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         object? Call(string name, params object?[] args) => typeof(MainWindow).GetMethod(name, flags)!.Invoke(window, args);
@@ -50,6 +53,16 @@ internal static class WslLaunchProbe
             var expectedDirectory = Exec(distro, "wslpath", "-w", location);
             if (directory.GetAwaiter().GetResult() != expectedDirectory)
                 throw new Exception("Explorer selected another WSL pane's directory: " + directory.Result + " expected " + expectedDirectory);
+            var poll = (Task)Call("PollDirectoryAsync", pane)!;
+            timer.Restart();
+            while (!poll.IsCompleted)
+            {
+                Pump(); Thread.Sleep(15);
+                if (timer.Elapsed > TimeSpan.FromSeconds(12)) throw new Exception("WSL history polling timed out");
+            }
+            poll.GetAwaiter().GetResult();
+            if (!history.Snapshot().Any(e => e.Path == DirectoryHistoryStore.Normalize(expectedDirectory)))
+                throw new Exception("WSL pane's real current directory was not recorded in history.");
         }
         string Exec(string? distro, params string[] args)
         {
@@ -101,6 +114,7 @@ internal static class WslLaunchProbe
             var shutdown = panes.Select(p => (Task)p.GetType().GetMethod("DisposeAsync")!.Invoke(p, null)!).ToArray();
             if (!Task.WaitAll(shutdown, TimeSpan.FromSeconds(10))) throw new Exception("WSL probe sessions did not shut down");
             window.Close();
+            Registry.CurrentUser.DeleteSubKeyTree(historyRegistry, false);
             var cleanup = Stopwatch.StartNew();
             while (true)
             {

@@ -19,7 +19,7 @@
         SourceInitialized="Window_SourceInitialized"
         PreviewKeyDown="Window_PreviewKeyDown">
     <shell:WindowChrome.WindowChrome>
-        <shell:WindowChrome CaptionHeight="46"
+        <shell:WindowChrome CaptionHeight="40"
                             ResizeBorderThickness="6"
                             CornerRadius="8"
                             GlassFrameThickness="0"
@@ -353,33 +353,53 @@
         <local:MenuContainerStyleSelector x:Key="DarkMenuContainerSelector"
             MenuItemStyle="{StaticResource DarkSubmenuItemStyle}"
             SeparatorStyle="{StaticResource {x:Type Separator}}" />
+        <Style x:Key="ProfileActionSegmentStyle" TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ChromeForegroundBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template"><Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Segment" Background="{TemplateBinding Background}" CornerRadius="3" BorderThickness="0">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Segment" Property="Background" Value="{DynamicResource RoundButtonHoverBrush}"/></Trigger>
+                        <Trigger Property="IsPressed" Value="True"><Setter TargetName="Segment" Property="Background" Value="{DynamicResource CaptionPressedBrush}"/></Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Segment" Property="Background" Value="{DynamicResource RoundButtonFocusBrush}"/></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value></Setter>
+        </Style>
         <Style x:Key="ChromeTabButtonStyle" TargetType="Button" BasedOn="{StaticResource DarkTitleButtonStyle}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="FocusBorder" Padding="{TemplateBinding Padding}" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="8">
+                        <Border x:Name="FocusBorder" Padding="{TemplateBinding Padding}" Background="Transparent" BorderThickness="0" CornerRadius="6">
                             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="FocusBorder" Property="BorderBrush" Value="{DynamicResource FocusBrush}" />
+                                <Setter TargetName="FocusBorder" Property="Opacity" Value="0.8" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="ChromeRoundButtonStyle" TargetType="Button" BasedOn="{StaticResource DarkTitleButtonStyle}">
+        <Style x:Key="TabCloseButtonStyle" TargetType="Button" BasedOn="{StaticResource DarkTitleButtonStyle}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Circle" CornerRadius="16" Background="Transparent">
+                        <Border x:Name="CloseBackground" CornerRadius="3" Background="Transparent" BorderThickness="0">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Circle" Property="Background" Value="{DynamicResource RoundButtonHoverBrush}" /></Trigger>
-                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="Circle" Property="Background" Value="{DynamicResource RoundButtonPressedBrush}" /></Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Circle" Property="Background" Value="{DynamicResource RoundButtonFocusBrush}" /></Trigger>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="CloseBackground" Property="Background" Value="{DynamicResource RoundButtonHoverBrush}" /></Trigger>
+                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="CloseBackground" Property="Background" Value="{DynamicResource RoundButtonPressedBrush}" /></Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="CloseBackground" Property="Background" Value="{DynamicResource RoundButtonFocusBrush}" /></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -401,7 +421,7 @@
         </Border.Style>
     <DockPanel Background="{DynamicResource TerminalBackgroundBrush}">
         <Grid DockPanel.Dock="Top"
-              Height="46"
+              Height="40"
               Background="{DynamicResource TitleBarBrush}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -410,23 +430,40 @@
 
             <DockPanel x:Name="TitleTabsHost" Grid.Column="0" Margin="8,0,20,0" LastChildFill="False"
                        SizeChanged="TitleTabsHost_SizeChanged">
+                <Border x:Name="AdministratorBadge" DockPanel.Dock="Left" Width="26" Margin="0,0,4,0" Visibility="Collapsed"
+                        ToolTip="{local:UiText Key='Running as administrator'}"
+                        AutomationProperties.Name="{local:UiText Key='Running as administrator'}"
+                        shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Path Width="15" Height="18" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"
+                          Data="M8,1 C6,3 3,3 1,4 L1,10 C1,14 4,17 8,19 C12,17 15,14 15,10 L15,4 C13,3 10,3 8,1 Z"
+                          Stroke="{DynamicResource ChromeForegroundBrush}" StrokeThickness="1.2" Opacity="0.8"/>
+                </Border>
                 <ScrollViewer x:Name="TabScroller" DockPanel.Dock="Left" VerticalScrollBarVisibility="Disabled"
                               PreviewMouseWheel="TabScroller_PreviewMouseWheel"
                               HorizontalScrollBarVisibility="Hidden">
                     <StackPanel x:Name="TabStrip" Orientation="Horizontal"
                                 shell:WindowChrome.IsHitTestVisibleInChrome="True" />
                 </ScrollViewer>
-                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Margin="4,0,0,0"
-                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
-                    <Button x:Name="NewTabButton" Width="32" Height="30" Content="+" FontSize="20"
-                            HorizontalContentAlignment="Center" ToolTip="New terminal (Ctrl+Shift+T)"
-                            Style="{StaticResource ChromeRoundButtonStyle}" Click="NewTabButton_Click"
-                            AutomationProperties.Name="New terminal" />
-                    <Button Width="26" Height="30" Content="⌄" FontSize="14"
-                            HorizontalContentAlignment="Center" ToolTip="Terminal profiles"
-                            Style="{StaticResource DarkTitleButtonStyle}" Click="ProfileMenuButton_Click"
-                            AutomationProperties.Name="Terminal profiles" />
-                </StackPanel>
+                <Border x:Name="NewTerminalControls" DockPanel.Dock="Left" Width="64" Height="28" Margin="4,0,4,3"
+                        VerticalAlignment="Bottom" CornerRadius="4" Background="Transparent"
+                        shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="36"/><ColumnDefinition Width="28"/></Grid.ColumnDefinitions>
+                        <Button x:Name="NewTabButton" ToolTip="{local:UiText Key='New terminal (Ctrl+Shift+T)'}"
+                                Style="{StaticResource ProfileActionSegmentStyle}" Click="NewTabButton_Click"
+                                AutomationProperties.Name="{local:UiText Key='New terminal'}">
+                            <Path Width="10" Height="10" Data="M5,0 L5,10 M0,5 L10,5" StrokeThickness="1"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                        </Button>
+                        <Border Grid.Column="1" Width="1" HorizontalAlignment="Left" Margin="0,6" Background="{DynamicResource ToolbarBorderBrush}" IsHitTestVisible="False"/>
+                        <Button x:Name="ProfileMenuButton" Grid.Column="1" ToolTip="{local:UiText Key='Terminal profiles'}"
+                                Style="{StaticResource ProfileActionSegmentStyle}" Click="ProfileMenuButton_Click"
+                                AutomationProperties.Name="{local:UiText Key='Terminal profiles'}">
+                            <Path Width="8" Height="4" Data="M0,0 L4,4 L8,0" StrokeThickness="1" StrokeLineJoin="Round"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                        </Button>
+                    </Grid>
+                </Border>
             </DockPanel>
 
             <StackPanel Grid.Column="1"
@@ -435,7 +472,7 @@
                         shell:WindowChrome.IsHitTestVisibleInChrome="True">
                 <Button Width="46"
                         Style="{StaticResource WindowCaptionButtonStyle}"
-                        ToolTip="Minimize" AutomationProperties.Name="Minimize"
+                        ToolTip="{local:UiText Key='Minimize'}" AutomationProperties.Name="{local:UiText Key='Minimize'}"
                         Click="MinimizeButton_Click">
                     <Path Width="10" Height="10" Data="M0,5 L10,5" StrokeThickness="1"
                           Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
@@ -443,7 +480,7 @@
                 <Button x:Name="MaximizeButton"
                         Width="46"
                         Style="{StaticResource WindowCaptionButtonStyle}"
-                        ToolTip="Maximize / Restore" AutomationProperties.Name="Maximize or restore"
+                        ToolTip="{local:UiText Key='Maximize / Restore'}" AutomationProperties.Name="{local:UiText Key='Maximize or restore'}"
                         Click="MaximizeButton_Click">
                     <Path x:Name="MaximizeGlyph" Width="10" Height="10" Data="M0.5,0.5 L9.5,0.5 9.5,9.5 0.5,9.5 Z" StrokeThickness="1"
                           Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
@@ -451,7 +488,7 @@
                 <Button Width="46"
                         Style="{StaticResource WindowCaptionButtonStyle}"
                         Tag="Close"
-                        ToolTip="Close window" AutomationProperties.Name="Close window"
+                        ToolTip="{local:UiText Key='Close window'}" AutomationProperties.Name="{local:UiText Key='Close window'}"
                         Click="CloseWindowButton_Click">
                     <Path Width="10" Height="10" Data="M0.5,0.5 L9.5,9.5 M9.5,0.5 L0.5,9.5" StrokeThickness="1"
                           Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
@@ -462,7 +499,7 @@
         <Border DockPanel.Dock="Top" Background="{DynamicResource ToolbarBrush}" BorderBrush="{DynamicResource ToolbarBorderBrush}" BorderThickness="0,0,0,1">
         <DockPanel Margin="8,0,14,3">
         <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" FontSize="10" Margin="14,0,0,0"
-                   ToolTip="Smart RTL automatically handles Persian and mixed-direction text">
+                   ToolTip="{local:UiText Key='Smart RTL automatically handles Persian and mixed-direction text'}">
             <TextBlock.Style>
                 <Style TargetType="TextBlock">
                     <Setter Property="Text" Value="●  SMART RTL" />
@@ -476,20 +513,20 @@
                 </Style>
             </TextBlock.Style>
         </TextBlock>
-        <Button x:Name="MacroStopButton" DockPanel.Dock="Right" Visibility="Collapsed" Width="26" Height="26" Content="■" Style="{StaticResource WindowCaptionButtonStyle}" Click="MacroStop_Click" ToolTip="Stop playback (Ctrl+Shift+Alt+End)" AutomationProperties.Name="Stop macro"/>
-        <Button x:Name="MacroStepButton" DockPanel.Dock="Right" Visibility="Collapsed" Width="26" Height="26" Content="▸|" Style="{StaticResource WindowCaptionButtonStyle}" Click="MacroStep_Click" ToolTip="Run one step, then pause" AutomationProperties.Name="Run one macro step"/>
-        <Button x:Name="MacroPauseButton" DockPanel.Dock="Right" Visibility="Collapsed" Width="26" Height="26" Content="Ⅱ" Style="{StaticResource WindowCaptionButtonStyle}" Click="MacroPause_Click" ToolTip="Pause / resume (Ctrl+Shift+Alt+P)" AutomationProperties.Name="Pause or resume macro"/>
-        <Button x:Name="MacroStatusButton" DockPanel.Dock="Right" Visibility="Collapsed" Margin="4,0" Padding="6,0" Height="26" Style="{StaticResource WindowCaptionButtonStyle}" Click="MacroStatus_Click" ToolTip="Stop recording / pause playback" AutomationProperties.Name="Macro status"/>
+        <Button x:Name="MacroStopButton" DockPanel.Dock="Right" Visibility="Collapsed" Width="26" Height="26" Content="■" Style="{StaticResource WindowCaptionButtonStyle}" Click="MacroStop_Click" ToolTip="{local:UiText Key='Stop playback (Ctrl+Shift+Alt+End)'}" AutomationProperties.Name="{local:UiText Key='Stop macro'}"/>
+        <Button x:Name="MacroStepButton" DockPanel.Dock="Right" Visibility="Collapsed" Width="26" Height="26" Content="▸|" Style="{StaticResource WindowCaptionButtonStyle}" Click="MacroStep_Click" ToolTip="{local:UiText Key='Run one step, then pause'}" AutomationProperties.Name="{local:UiText Key='Run one macro step'}"/>
+        <Button x:Name="MacroPauseButton" DockPanel.Dock="Right" Visibility="Collapsed" Width="26" Height="26" Content="Ⅱ" Style="{StaticResource WindowCaptionButtonStyle}" Click="MacroPause_Click" ToolTip="{local:UiText Key='Pause / resume (Ctrl+Shift+Alt+P)'}" AutomationProperties.Name="{local:UiText Key='Pause or resume macro'}"/>
+        <Button x:Name="MacroStatusButton" DockPanel.Dock="Right" Visibility="Collapsed" Margin="4,0" Padding="6,0" Height="26" Style="{StaticResource WindowCaptionButtonStyle}" Click="MacroStatus_Click" ToolTip="{local:UiText Key='Stop recording / pause playback'}" AutomationProperties.Name="{local:UiText Key='Macro status'}"/>
         <Button x:Name="HtmlPreviewButton" DockPanel.Dock="Right" Width="30" Height="26" Margin="8,0,0,0"
                 Style="{StaticResource WindowCaptionButtonStyle}" Click="HtmlPreviewButton_Click"
-                ToolTip="Preview this page in your browser" AutomationProperties.Name="HTML preview">
+                ToolTip="{local:UiText Key='Preview this page in your browser'}" AutomationProperties.Name="{local:UiText Key='HTML preview'}">
             <Viewbox Width="16" Height="16">
                 <Path Data="M1,8 C4,2 12,2 15,8 C12,14 4,14 1,8 Z M10,8 A2,2 0 1 1 6,8 A2,2 0 1 1 10,8"
                       Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.3" />
             </Viewbox>
         </Button>
         <ToggleButton x:Name="DarkModeButton" DockPanel.Dock="Right" Width="30" Height="26" Margin="4,0,0,0"
-                      IsChecked="True" Click="DarkModeButton_Click" AutomationProperties.Name="Dark mode">
+                      IsChecked="True" Click="DarkModeButton_Click" AutomationProperties.Name="{local:UiText Key='Dark mode'}">
             <ToggleButton.Style>
                 <Style TargetType="ToggleButton">
                     <Setter Property="Foreground" Value="{DynamicResource ChromeForegroundBrush}"/>
@@ -513,81 +550,121 @@
             <Path Width="15" Height="15" Stretch="Uniform" Data="M12,1 A7,7 0 1 0 15,12 A7,7 0 0 1 12,1 Z"
                   Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"/>
         </ToggleButton>
-        <Menu Height="28" FontFamily="Segoe UI" FontSize="12"
+        <Grid ClipToBounds="True">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Menu Grid.Column="0" Height="28" FontFamily="Segoe UI" FontSize="12"
               Background="Transparent"
               Foreground="{DynamicResource ChromeForegroundBrush}"
               ItemContainerStyle="{StaticResource DarkTopLevelMenuItemStyle}">
-            <MenuItem Header="_File">
+            <MenuItem Header="{local:UiText Key='_File'}">
                 <MenuItem x:Name="OpenDirectoryMenuItem"
-                          Header="_Open current directory in Explorer"
+                          Header="{local:UiText Key='_Open current directory in Explorer'}"
                           Click="OpenDirectoryMenuItem_Click" />
                 <Separator />
                 <MenuItem x:Name="LastDirectoriesMenuItem"
-                          Header="_Last directories"
+                          Header="{local:UiText Key='_Last directories'}"
                           SubmenuOpened="LastDirectoriesMenuItem_SubmenuOpened">
-                    <MenuItem Header="No recent directories"
+                    <MenuItem Header="{local:UiText Key='No recent directories'}"
                               IsEnabled="False" />
                 </MenuItem>
                 <Separator />
-                <MenuItem Header="_Export session..."
+                <MenuItem Header="{local:UiText Key='_Export session...'}"
                           Click="ExportSessionMenuItem_Click" />
                 <Separator />
-                <MenuItem Header="E_xit"
+                <MenuItem Header="{local:UiText Key='E_xit'}"
                           Click="ExitMenuItem_Click" />
             </MenuItem>
-            <MenuItem Header="_Edit">
-                <MenuItem Header="_Settings..."
+            <MenuItem Header="{local:UiText Key='_Edit'}">
+                <MenuItem Header="{local:UiText Key='_Settings...'}"
                           Click="FontSettingsMenuItem_Click" />
             </MenuItem>
-            <MenuItem Header="_View">
-                <MenuItem x:Name="SplitPaneMenuItem" Header="_Split pane" InputGestureText="Ctrl+Shift+D"
+            <MenuItem Header="{local:UiText Key='_View'}">
+                <MenuItem x:Name="SplitPaneMenuItem" Header="{local:UiText Key='_Split pane'}" InputGestureText="Ctrl+Shift+D"
                           Click="SplitPaneMenuItem_Click" />
-                <MenuItem x:Name="JoinTabMenuItem" Header="Show _tab side by side"
+                <MenuItem x:Name="JoinTabMenuItem" Header="{local:UiText Key='Show _tab side by side'}"
                           SubmenuOpened="JoinTabMenuItem_SubmenuOpened">
-                    <MenuItem Header="No other tabs" IsEnabled="False" />
+                    <MenuItem Header="{local:UiText Key='No other tabs'}" IsEnabled="False" />
                 </MenuItem>
-                <MenuItem x:Name="MovePaneMenuItem" IsEnabled="False" Header="_Move pane to a new tab"
+                <MenuItem x:Name="MovePaneMenuItem" IsEnabled="False" Header="{local:UiText Key='_Move pane to a new tab'}"
                           Click="MovePaneMenuItem_Click" />
-                <MenuItem x:Name="ClosePaneMenuItem" Header="Close _pane" InputGestureText="Ctrl+Shift+W"
+                <MenuItem x:Name="ClosePaneMenuItem" Header="{local:UiText Key='Close _pane'}" InputGestureText="Ctrl+Shift+W"
                           Click="ClosePaneMenuItem_Click" />
                 <Separator />
                 <MenuItem x:Name="SmartRtlMenuItem"
-                          Header="_Smart RTL"
+                          Header="{local:UiText Key='_Smart RTL'}"
                           IsCheckable="True"
-                          ToolTip="Use right-to-left layout only for lines containing RTL letters"
+                          ToolTip="{local:UiText Key='Use right-to-left layout only for lines containing RTL letters'}"
                           Checked="SmartRtlMenuItem_Changed"
                           Unchecked="SmartRtlMenuItem_Changed" />
-                <MenuItem x:Name="RowRtlMenuItem" Header="Row RTL" IsCheckable="True" IsChecked="False"
-                          ToolTip="Force right-to-left direction and right alignment for every row, including full-screen applications. This may move application borders."
+                <MenuItem x:Name="RowRtlMenuItem" Header="{local:UiText Key='Row RTL'}" IsCheckable="True" IsChecked="False"
+                          ToolTip="{local:UiText Key='Force right-to-left direction and right alignment for every row, including full-screen applications. This may move application borders.'}"
                           Checked="SmartRtlMenuItem_Changed" Unchecked="SmartRtlMenuItem_Changed" />
                 <Separator />
-                <MenuItem x:Name="ThemeMenuItem" Header="_Theme..." Click="ThemeMenuItem_Click" />
+                <MenuItem x:Name="ThemeMenuItem" Header="{local:UiText Key='_Theme...'}" Click="ThemeMenuItem_Click" />
             </MenuItem>
-            <MenuItem Header="_Tools">
-                <MenuItem Header="_Macros" SubmenuOpened="MacroMenu_Opened">
-                    <MenuItem x:Name="MacroRecordMenuItem" Header="_Start recording" Click="MacroRecord_Click"/>
-                    <MenuItem x:Name="MacroStopMenuItem" Header="Stop playback" IsEnabled="False" Click="MacroStop_Click"/>
+            <MenuItem Header="{local:UiText Key='_Tools'}">
+                <MenuItem Header="{local:UiText Key='_Macros'}" SubmenuOpened="MacroMenu_Opened">
+                    <MenuItem x:Name="MacroRecordMenuItem" Header="{local:UiText Key='_Start recording'}" Click="MacroRecord_Click"/>
+                    <MenuItem x:Name="MacroStopMenuItem" Header="{local:UiText Key='Stop playback'}" IsEnabled="False" Click="MacroStop_Click"/>
                     <Separator/>
-                    <MenuItem x:Name="MacroRunMenu" Header="_Run"><MenuItem Header="No recorded macros" IsEnabled="False"/></MenuItem>
-                    <MenuItem Header="_Manage recorded macros..." Click="MacroManage_Click"/>
-                    <MenuItem Header="Macro _settings..." Click="MacroSettings_Click"/>
+                    <MenuItem x:Name="MacroRunMenu" Header="{local:UiText Key='_Run'}"><MenuItem Header="{local:UiText Key='No recorded macros'}" IsEnabled="False"/></MenuItem>
+                    <MenuItem Header="{local:UiText Key='_Manage recorded macros...'}" Click="MacroManage_Click"/>
+                    <MenuItem Header="{local:UiText Key='Macro _settings...'}" Click="MacroSettings_Click"/>
                 </MenuItem>
                 <MenuItem x:Name="ContextMenuIntegrationMenuItem"
-                          Header="Add _Open in RtlTerminal"
+                          Header="{local:UiText Key='Add _Open in RtlTerminal'}"
                           IsCheckable="True"
                           Click="ContextMenuIntegrationMenuItem_Click" />
             </MenuItem>
-            <MenuItem Header="_Help">
-                <MenuItem Header="_Guide"
+            <MenuItem Header="{local:UiText Key='_Help'}">
+                <MenuItem x:Name="LanguageMenuItem" Header="{local:UiText Key='LANGUAGE'}">
+                    <MenuItem x:Name="EnglishLanguageItem" Header="English" Tag="English" IsCheckable="True" Click="Language_Click"/>
+                    <MenuItem x:Name="PersianLanguageItem" Header="فارسی" Tag="Persian" IsCheckable="True" Click="Language_Click"/>
+                    <MenuItem x:Name="ArabicLanguageItem" Header="العربية" Tag="Arabic" IsCheckable="True" Click="Language_Click"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="{local:UiText Key='_Guide'}"
                           Click="GuideMenuItem_Click" />
                 <MenuItem x:Name="CheckForUpdatesMenuItem"
-                          Header="Check for _updates..."
+                          Header="{local:UiText Key='Check for _updates...'}"
                           Click="CheckForUpdatesMenuItem_Click" />
                 <Separator />
-                <MenuItem Header="_About Rtl Terminal"
+                <MenuItem Header="{local:UiText Key='_About Rtl Terminal'}"
                           Click="AboutMenuItem_Click" />
             </MenuItem>
         </Menu>
+        <Button x:Name="ActiveDirectoryButton" Grid.Column="1" Height="24" MaxWidth="180" MinWidth="0" Margin="10,3,0,1"
+                HorizontalAlignment="Left" HorizontalContentAlignment="Stretch" VerticalAlignment="Center"
+                Click="ActiveDirectory_Click" IsEnabled="False" AutomationProperties.Name="{local:UiText Key='Open current directory in Explorer'}">
+            <Button.Style>
+                <Style TargetType="Button">
+                    <Setter Property="Foreground" Value="{DynamicResource DirectoryBadgeForegroundBrush}"/>
+                    <Setter Property="Background" Value="{DynamicResource DirectoryBadgeBrush}"/>
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                    <Setter Property="Template"><Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Pill" Padding="7,2" CornerRadius="3" BorderThickness="0"
+                                    Background="{TemplateBinding Background}">
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Pill" Property="Background" Value="{DynamicResource DirectoryBadgeHoverBrush}"/></Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Pill" Property="Background" Value="{DynamicResource DirectoryBadgeHoverBrush}"/></Trigger>
+                                <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value></Setter>
+                </Style>
+            </Button.Style>
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="17"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Path Width="12" Height="10" Opacity="0.8" Stretch="Uniform" Data="M0,2 L0,12 L16,12 L16,4 L8,4 L6,1 L0,1 Z"
+                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.2" VerticalAlignment="Center"/>
+                <TextBlock x:Name="ActiveDirectoryText" Grid.Column="1" Text="…" FontSize="12" FontWeight="Normal" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" FlowDirection="LeftToRight"/>
+            </Grid>
+        </Button>
+        </Grid>
         </DockPanel>
         </Border>
 

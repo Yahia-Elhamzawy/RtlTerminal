@@ -37,7 +37,7 @@ public partial class MainWindow
         _macroPane = null; SetMacroStatus(null);
         Dispatcher.BeginInvoke(new Action(() =>
         {
-            MessageBox.Show(this, "Recording stopped at its limit. Terminal input was still sent. You can save the captured steps.", "Macro recording");
+            UiText.Show(this, "Recording stopped at its limit. Terminal input was still sent. You can save the captured steps.", "Macro recording");
             if (recorder?.Macro.Steps.Count > 0) EditMacro(recorder.Finish(), "");
         }));
     }
@@ -67,9 +67,9 @@ public partial class MainWindow
 
     private void SetMacroStatus(string? text)
     {
-        MacroStatusButton.Content = _macroPlayback?.IsPaused == true ? "Ⅱ Paused · " + (_macroPane?.Number.ToString() ?? "") : text ?? "";
+        MacroStatusButton.Content = _macroPlayback?.IsPaused == true ? UiText.Format("Ⅱ Paused · {0}", _macroPane?.Number) : UiText.Get(text ?? "");
         MacroStatusButton.Visibility = text is null ? Visibility.Collapsed : Visibility.Visible;
-        MacroRecordMenuItem.Header = _macroRecorder is null ? "_Start recording" : "_Stop recording...";
+        MacroRecordMenuItem.SetCurrentValue(MenuItem.HeaderProperty, UiText.Get(_macroRecorder is null ? "_Start recording" : "_Stop recording..."));
         MacroRecordMenuItem.IsEnabled = _macroCancellation is null && !_macroPreparing;
         MacroStopMenuItem.IsEnabled = _macroCancellation is not null;
         MacroPauseButton.Visibility = MacroStepButton.Visibility = MacroStopButton.Visibility = _macroCancellation is null ? Visibility.Collapsed : Visibility.Visible;
@@ -108,7 +108,7 @@ public partial class MainWindow
             if (editor.ShowDialog() != true) return;
             password = editor.Password;
             try { _macroStore.Save(macro, password, _macroSettings.AskSensitive); return; }
-            catch (Exception ex) { MessageBox.Show(this, ex is System.Security.Cryptography.CryptographicException ? "Could not encrypt the macro." : ex.Message, "Save macro"); }
+            catch (Exception ex) { UiText.Show(this, ex is System.Security.Cryptography.CryptographicException ? "Could not encrypt the macro." : ex.Message, "Save macro"); }
         }
     }
 
@@ -140,9 +140,9 @@ public partial class MainWindow
                 item.Click += async (_, _) => await RunMacro(entry);
                 MacroRunMenu.Items.Add(item);
             }
-            if (MacroRunMenu.Items.Count == 0) MacroRunMenu.Items.Add(new MenuItem { Header = "No recorded macros", IsEnabled = false });
+            if (MacroRunMenu.Items.Count == 0) MacroRunMenu.Items.Add(new MenuItem { Header = UiText.Get("No recorded macros"), IsEnabled = false });
         }
-        catch { MacroRunMenu.Items.Add(new MenuItem { Header = "Unable to read macros — open Manage", IsEnabled = false }); }
+        catch { MacroRunMenu.Items.Add(new MenuItem { Header = UiText.Get("Unable to read macros — open Manage"), IsEnabled = false }); }
     }
 
     private async Task RunMacro(MacroEntry entry)
@@ -185,8 +185,8 @@ public partial class MainWindow
                 step => EncodeMacroKey(pane, step));
         }
         catch (OperationCanceledException) { }
-        catch (System.Security.Cryptography.CryptographicException) { MessageBox.Show(this, "Incorrect password or damaged macro file.", "Macro"); }
-        catch (Exception ex) { MessageBox.Show(this, ex.Message, "Macro stopped"); }
+        catch (System.Security.Cryptography.CryptographicException) { UiText.Show(this, "Incorrect password or damaged macro file.", "Macro"); }
+        catch (Exception ex) { UiText.Show(this, ex.Message, "Macro stopped"); }
         finally
         {
             pane.Playback = null; _macroPlayback = null; _macroCancellation = null; _macroPane = null; _macroPreparing = false; _macroStepMode = false; SetMacroStatus(null);
@@ -196,27 +196,27 @@ public partial class MainWindow
     private async void MacroManage_Click(object sender, RoutedEventArgs e)
     {
         if (_macroRecorder is not null || _macroCancellation is not null || _macroPreparing) return;
-        var window = new Window { Owner = this, Title = "Recorded macros", Width = 620, Height = 400, MinWidth = 450, MinHeight = 250, WindowStartupLocation = WindowStartupLocation.CenterOwner };
+        var window = new Window { Owner = this, Title = UiText.Get("Recorded macros"), Width = 620, Height = 400, MinWidth = 450, MinHeight = 250, WindowStartupLocation = WindowStartupLocation.CenterOwner };
         window.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(244,245,247));
         window.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(24,32,51));
         var root = new DockPanel { Margin = new Thickness(16) }; window.Content = root;
         var searchPanel = new StackPanel(); DockPanel.SetDock(searchPanel, Dock.Top); root.Children.Add(searchPanel);
-        searchPanel.Children.Add(new TextBlock { Text = "Recorded macros", FontSize = 22, FontWeight = FontWeights.SemiBold });
-        searchPanel.Children.Add(new TextBlock { Text = "Search by name", Margin = new Thickness(0,12,0,4) });
+        searchPanel.Children.Add(new TextBlock { Text = UiText.Get("Recorded macros"), FontSize = 22, FontWeight = FontWeights.SemiBold });
+        searchPanel.Children.Add(new TextBlock { Text = UiText.Get("Search by name"), Margin = new Thickness(0,12,0,4) });
         var search = new TextBox { Margin = new Thickness(0,0,0,12) }; searchPanel.Children.Add(search);
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0,12,0,0) }; DockPanel.SetDock(buttons, Dock.Bottom); root.Children.Add(buttons);
         var list = new ListBox(); root.Children.Add(list);
         bool Refresh()
         {
             try { list.ItemsSource = _macroStore.List().Where(m => m.Name.Contains(search.Text.Trim(), StringComparison.CurrentCultureIgnoreCase)).ToArray(); return true; }
-            catch { MessageBox.Show(this, "Unable to read macro storage. A file may be damaged or belong to another Windows account.", "Macros"); return false; }
+            catch { UiText.Show(this, "Unable to read macro storage. A file may be damaged or belong to another Windows account.", "Macros"); return false; }
         }
         if (!Refresh()) return;
         search.TextChanged += (_, _) => Refresh();
         MacroEntry? selectedRun = null;
         foreach (var label in new[] { "Run", "Step through", "Edit / password…", "Delete" })
         {
-            var button = new Button { Content = label, Padding = new Thickness(12,6,12,6), Margin = new Thickness(0,0,8,0), IsEnabled = false }; buttons.Children.Add(button);
+            var button = new Button { Content = UiText.Get(label), Padding = new Thickness(12,6,12,6), Margin = new Thickness(0,0,8,0), IsEnabled = false }; buttons.Children.Add(button);
             list.SelectionChanged += (_, _) => button.IsEnabled = list.SelectedItem is MacroEntry;
             button.Click += (_, _) =>
             {
@@ -226,7 +226,7 @@ public partial class MainWindow
                 {
                     if (label == "Delete")
                     {
-                        if (MessageBox.Show(window, $"Delete '{entry.Name}'?", "Delete macro", MessageBoxButton.YesNo) == MessageBoxResult.Yes) _macroStore.Delete(entry.Id);
+                        if (UiText.Show(window, $"Delete '{entry.Name}'?", "Delete macro", MessageBoxButton.YesNo) == MessageBoxResult.Yes) _macroStore.Delete(entry.Id);
                     }
                     else
                     {
@@ -237,8 +237,8 @@ public partial class MainWindow
                     }
                     Refresh();
                 }
-                catch (System.Security.Cryptography.CryptographicException) { MessageBox.Show(window, "Incorrect password or damaged macro file.", "Macros"); }
-                catch (Exception ex) { MessageBox.Show(window, ex.Message, "Macros"); }
+                catch (System.Security.Cryptography.CryptographicException) { UiText.Show(window, "Incorrect password or damaged macro file.", "Macros"); }
+                catch (Exception ex) { UiText.Show(window, ex.Message, "Macros"); }
             };
         }
         window.ShowDialog();

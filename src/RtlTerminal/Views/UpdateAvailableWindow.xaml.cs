@@ -9,9 +9,7 @@ public partial class UpdateAvailableWindow : Window
         Version latestVersion)
     {
         InitializeComponent();
-        VersionTextBlock.Text =
-            $"Installed: {FormatVersion(currentVersion)}    " +
-            $"Available: {FormatVersion(latestVersion)}";
+        VersionTextBlock.Text = UiText.Format("Installed: {0}    Available: {1}", FormatVersion(currentVersion), FormatVersion(latestVersion));
     }
 
     public bool OpenUpdateRequested { get; private set; }

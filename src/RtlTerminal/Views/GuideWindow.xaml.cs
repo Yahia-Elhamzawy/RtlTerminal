@@ -14,7 +14,7 @@ public partial class GuideWindow : Window
     public GuideWindow()
     {
         InitializeComponent();
-        ApplyLanguage(GuideLanguage.Persian);
+        ApplyLanguage(UiText.Current switch { UiLanguage.Arabic => GuideLanguage.Arabic, UiLanguage.Persian => GuideLanguage.Persian, _ => GuideLanguage.English });
     }
 
     private void LanguageButton_Click(object sender, RoutedEventArgs e)
@@ -29,12 +29,9 @@ public partial class GuideWindow : Window
     private void ApplyLanguage(GuideLanguage language)
     {
         var content = GetContent(language);
-        var isEnglish = language == GuideLanguage.English;
 
         Title = content.WindowTitle;
-        ContentRoot.FlowDirection = isEnglish
-            ? FlowDirection.LeftToRight
-            : FlowDirection.RightToLeft;
+        // ContentRoot keeps its existing XAML direction for every UI language.
         GuideHeading.Text = content.Heading;
         GuideSubtitle.Text = content.Subtitle;
         MacrosGuideTitle.Text = language switch { GuideLanguage.English => "Terminal macros", GuideLanguage.Arabic => "وحدات الماكرو", _ => "ماکروهای ترمینال" };

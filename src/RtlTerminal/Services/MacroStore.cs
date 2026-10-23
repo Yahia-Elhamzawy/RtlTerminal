@@ -8,7 +8,7 @@ namespace RtlTerminal;
 
 public sealed record MacroEntry(Guid Id, string Name, MacroMode Mode, int Shortcut, bool PasswordProtected)
 {
-    public override string ToString() => Name + " · " + Mode + (PasswordProtected ? " · Password protected" : " · Windows protected") +
+    public override string ToString() => Name + " · " + UiText.Get(Mode.ToString()) + " · " + UiText.Get(PasswordProtected ? "Password protected" : "Windows protected") +
         (Shortcut > 0 ? $"  (Ctrl+Shift+Alt+{Shortcut})" : "");
 }
 

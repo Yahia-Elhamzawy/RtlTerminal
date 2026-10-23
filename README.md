@@ -44,7 +44,16 @@
 
 Rtl Terminal uses the Windows ConPTY API and works with command-line environments such as Command Prompt, PowerShell, WSL, Bash, developer tools, package managers and interactive terminal applications.
 
-### What's new in 1.1.3
+### What's new in 1.1.4
+
+- English, Persian and Arabic interface text through **Help → LANGUAGE**, with the layout direction preserved.
+- Recent-directory history across tabs and splits: 20 menu entries, a searchable 200-entry window, visit timestamps, clear history and an opt-out setting.
+- An Administrator shield and a compact, clickable current-directory indicator for the active pane.
+- Native shell icons, compact rounded tabs, muted inactive colors and separate hover states for new-tab/profile actions.
+- Inline tab renaming with Enter to save, Escape or the small internal cross to cancel; the active name is also used by the window/taskbar title.
+- Refined close buttons, borderless controls and a quieter inset folder indicator.
+
+### Highlights from 1.1.3
 
 - **Tools → Macros**: interactive and timed recording, searchable management, a numbered step editor, pause/resume and single-step playback.
 - Independent terminal key actions, including `Ctrl+C`, with configurable key groups and exclusions. Copying selected text is not recorded as an interrupt.
@@ -75,6 +84,14 @@ Macro files are encrypted for the current Windows account. An optional independe
 See the [macro guide, security details and file compatibility notes](docs/macros.md). Windows account encryption alone does not prevent access by other software running as that same user.
 
 ### Features
+
+- Double-click a tab's name to rename it inline. Enter saves, Escape cancels, and an empty name restores the automatic title. The active tab name is also used as the window/taskbar preview title.
+
+- Compact tabs show the Windows PowerShell, Command Prompt or Linux profile icon. New-tab and profile-picker actions share a two-part control with separate hover, focus and click states.
+
+- A shield before the first tab indicates an elevated Administrator process. A compact folder button after Help shows the active pane's current folder; click it to open that pane's directory in Explorer, including in split layouts.
+
+- Choose **Help → LANGUAGE → English / فارسی / العربية** to change interface text immediately. The selection is remembered; layout direction, item order, terminal output and user input stay unchanged.
 
 Developer reference: [repository layout and build paths](docs/project-layout.md).
 
@@ -109,7 +126,7 @@ Developer reference: [repository layout and build paths](docs/project-layout.md)
 - Open a terminal directly in the selected folder.
 - Open the active pane's current directory in Explorer from File, including WSL directories. If no pane is selected, the last opened pane is used.
 - Remember whether new tabs should use Command Prompt, PowerShell or WSL.
-- Reopen one of the ten most recent Command Prompt directories from the File menu.
+- **File → Last directories** tracks visits across tabs and split panes in Command Prompt, PowerShell and WSL. The menu shows 20 recent directories; **More…** opens up to 200 with search, last-visit dates and times, and a clear-history button. Disable recording in **Settings → History**. See [directory history](docs/directory-history.md).
 - Export the retained content of the current terminal session to a UTF-8 text file.
 - Provide a built-in guide in English, Persian and Arabic.
 - Check GitHub Releases for updates manually or at startup, with a per-version dismissal option.
@@ -341,7 +358,16 @@ This project is licensed under the **GNU General Public License, version 3 (GPLv
 
 این برنامه با استفاده از Windows ConPTY می‌تواند محیط‌هایی مانند Command Prompt، PowerShell، WSL، Bash، ابزارهای توسعه، package managerها و برنامه‌های تعاملی ترمینال را اجرا کند.
 
-### تغییرات نسخهٔ 1.1.3
+### تغییرات نسخهٔ 1.1.4
+
+- رابط انگلیسی، فارسی و عربی از **Help → LANGUAGE** بدون تغییر جهت چیدمان.
+- تاریخچهٔ پوشه‌ها در تب‌ها و اسپلیت‌ها: ۲۰ مسیر در منو، پنجرهٔ جست‌وجوی ۲۰۰ مسیر، زمان ورود، پاک‌سازی و امکان غیرفعال‌کردن ثبت.
+- نشان Administrator و نمایشگر کوچک و قابل کلیک پوشهٔ پنل فعال.
+- آیکون‌های اصلی شل، تب‌های کم‌ارتفاع با گردی ثابت، رنگ ملایم تب‌های غیرفعال و hover مستقل دکمه‌ها.
+- تغییر نام تب در همان محل؛ Enter برای ثبت و Escape یا ضربدر داخلی برای لغو، همراه با نمایش نام تب فعال در عنوان پنجره و تسک‌بار.
+- اصلاح ضربدر بستن تب، کنترل‌های بدون border و نمایشگر آرام و فرورفتهٔ پوشه.
+
+### تغییرات مهم نسخهٔ 1.1.3
 
 - منوی **Tools → Macros** برای ضبط تعاملی و زمانی، مدیریت قابل جست‌وجو، ویرایش مراحل شماره‌دار، مکث و اجرای مرحله‌ای.
 - ضبط مستقل کلیدهایی مانند `Ctrl+C` با امکان تنظیم گروه‌های کلید و استثناها؛ کپی متن انتخاب‌شده به‌عنوان قطع عملیات ضبط نمی‌شود.
@@ -373,6 +399,14 @@ This project is licensed under the **GNU General Public License, version 3 (GPLv
 
 ### امکانات
 
+- تغییر نام تب با دوبارکلیک روی نام؛ Enter برای ثبت، Escape برای لغو و نام خالی برای بازگشت به عنوان خودکار. عنوان پنجره و پیش‌نمایش تسک‌بار از نام تب فعال استفاده می‌کنند.
+
+- تب‌های کم‌ارتفاع با آیکون مخصوص پاورشل، CMD و Linux؛ دکمهٔ تب جدید و انتخاب پروفایل در یک مجموعهٔ دو‌بخشی با حالت‌های مستقل hover، فوکوس و کلیک.
+
+- نمایش سپر قبل از اولین تب هنگام اجرای Administrator؛ کادر کوچک کنار Help نام پوشهٔ پنل فعال را نشان می‌دهد و با کلیک، همان پوشه را در اکسپلورر باز می‌کند. انتخاب اسپلیت، پوشهٔ نمایش‌داده‌شده را تغییر می‌دهد.
+
+- انتخاب **Help → LANGUAGE → English / فارسی / العربية** برای تغییر فوری متن رابط؛ زبان انتخاب‌شده ذخیره می‌شود و جهت چیدمان، ترتیب آیتم‌ها، خروجی ترمینال و ورودی کاربر تغییر نمی‌کنند.
+
 - انتخاب تم روشن یا تیره از `View` → `Theme` با ذخیرهٔ انتخاب؛ حفظ رنگ‌های RGB صریح برنامه‌ها
 - انتخاب طرح‌های رنگی آماده (Campbell، One Half، Solarized، Tango، Dracula، Nord، Gruvbox و دیگران) از تب `Theme` در تنظیمات؛ پیش‌نمایش با کلیدهای بالا و پایین و اعمال با `Apply`
 - اعمال Smart RTL برای هر خط با حفظ جهت درست بخش‌های انگلیسی، اعداد و علائم
@@ -399,7 +433,7 @@ This project is licensed under the **GNU General Public License, version 3 (GPLv
 - افزودن اختیاری گزینه **Open in RtlTerminal** به منوی راست‌کلیک پوشه‌ها
 - بازکردن ترمینال مستقیماً در مسیر پوشه انتخاب‌شده
 - به‌خاطرسپردن CMD، پاورشل یا WSL به‌عنوان محیط پیش‌فرض تب جدید
-- دسترسی به ده مسیر اخیر CMD از منوی File
+- ثبت مسیرهای تب‌ها و اسپلیت‌های CMD، پاورشل و WSL؛ نمایش ۲۰ مسیر اخیر در **File → Last directories** و تا ۲۰۰ مسیر همراه با جست‌وجو، تاریخ و ساعت آخرین ورود و پاک‌سازی در **More…**؛ غیرفعال‌کردن ثبت از **Settings → History**. [راهنمای تاریخچه](docs/directory-history.md)
 - خروجی‌گرفتن از محتوای جلسهٔ جاری در فایل متنی UTF-8
 - راهنمای داخلی به زبان‌های فارسی، عربی و انگلیسی
 - بررسی نسخه‌های جدید GitHub هنگام اجرا یا به‌صورت دستی
@@ -507,7 +541,16 @@ git push origin main
 
 يعتمد البرنامج على Windows ConPTY، ويمكنه تشغيل Command Prompt وPowerShell وWSL وBash وأدوات المطورين ومديري الحزم وتطبيقات CLI وTUI.
 
-### الجديد في الإصدار 1.1.3
+### الجديد في الإصدار 1.1.4
+
+- نصوص واجهة بالإنجليزية والفارسية والعربية من **Help → LANGUAGE** دون تغيير اتجاه التخطيط.
+- سجل مجلدات عبر العلامات والأجزاء: 20 عنصراً في القائمة ونافذة بحث حتى 200 مجلد مع أوقات الزيارة والمسح وتعطيل التسجيل.
+- درع صلاحيات المسؤول ومؤشر صغير قابل للنقر لمجلد الجزء النشط.
+- أيقونات الصدفات الأصلية وعلامات تبويب أقل ارتفاعاً بحواف مستديرة ثابتة وألوان أهدأ لغير النشط وتأثيرات مرور مستقلة.
+- إعادة تسمية العلامة في مكانها؛ Enter للحفظ وEscape أو علامة الإلغاء الداخلية للإلغاء، مع تحديث عنوان النافذة وشريط المهام.
+- تحسين أزرار الإغلاق وإزالة حدود الأزرار ومؤشر مجلد هادئ بمظهر غائر.
+
+### أبرز تغييرات الإصدار 1.1.3
 
 - قائمة **Tools → Macros** للتسجيل التفاعلي والزمني، والبحث، وتحرير الخطوات المرقّمة، والإيقاف المؤقت والتنفيذ خطوة بخطوة.
 - تسجيل مفاتيح مستقلة مثل `Ctrl+C` مع إعداد مجموعات المفاتيح والاستثناءات؛ نسخ النص المحدد لا يُسجّل كمقاطعة.
@@ -539,6 +582,14 @@ git push origin main
 
 ### المميزات
 
+- انقر مرتين على اسم علامة التبويب لإعادة تسميتها. يحفظ Enter ويلغي Escape، ويعيد الاسم الفارغ العنوان التلقائي. يستخدم عنوان النافذة ومعاينة شريط المهام اسم العلامة النشطة.
+
+- علامات تبويب أقل ارتفاعاً مع أيقونات PowerShell وCMD وLinux. يجمع عنصر ثنائي الأجزاء زر العلامة الجديدة واختيار الملف التعريفي، مع حالات مستقلة للمرور والتركيز والنقر.
+
+- يظهر درع قبل أول علامة تبويب عند التشغيل بصلاحيات المسؤول. يعرض زر صغير بجوار Help مجلد الجزء النشط ويفتحه في المستكشف عند النقر، مع تتبّع الجزء المحدد في العرض المقسّم.
+
+- اختر **Help → LANGUAGE → English / فارسی / العربية** لتغيير نصوص الواجهة فوراً. يُحفظ الاختيار دون تغيير اتجاه التخطيط أو ترتيب العناصر أو مخرجات الطرفية أو إدخال المستخدم.
+
 - اختيار مظهر فاتح أو داكن من `View` → `Theme` مع حفظ الاختيار والحفاظ على ألوان RGB الصريحة
 - اختيار مخططات ألوان جاهزة (Campbell وOne Half وSolarized وTango وDracula وNord وGruvbox وغيرها) من تبويب `Theme` في الإعدادات، مع معاينة قبل الضغط على `Apply`
 - تطبيق Smart RTL لكل سطر مع الحفاظ على اتجاه المقاطع الإنجليزية والأرقام وعلامات الترقيم
@@ -565,7 +616,7 @@ git push origin main
 - فتح الطرفية مباشرة داخل المجلد المحدد
 - فتح المجلد الحالي للجزء المحدد في مستكشف الملفات من قائمة File، بما في ذلك مسارات WSL؛ وعند عدم تحديد جزء يُستخدم آخر جزء مفتوح
 - تذكّر CMD أو PowerShell أو WSL كبيئة افتراضية لعلامات التبويب الجديدة
-- فتح أحد آخر عشرة مجلدات CMD من قائمة File
+- تسجيل مجلدات علامات التبويب والأجزاء في CMD وPowerShell وWSL؛ تعرض **File → Last directories** آخر 20 مجلداً ويفتح **More…** سجلاً حتى 200 مجلد مع البحث وتاريخ ووقت آخر زيارة والمسح. يمكن تعطيل التسجيل من **Settings → History**. [دليل السجل](docs/directory-history.md)
 - تصدير محتوى الجلسة الحالية إلى ملف نصي UTF-8
 - دليل مدمج باللغات العربية والفارسية والإنجليزية
 - التحقق من تحديثات GitHub تلقائياً أو يدوياً

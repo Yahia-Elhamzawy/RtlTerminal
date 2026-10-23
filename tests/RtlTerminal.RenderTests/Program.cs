@@ -20,6 +20,12 @@ internal static partial class Program
     private static void Run()
     {
         if (Environment.GetCommandLineArgs().Contains("--macro-child")) { MacroTests.Child(); return; }
+        if (Environment.GetCommandLineArgs().Contains("--tab-rename-smoke"))
+        {
+            if (Application.Current is null) _ = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+            AppTheme.Apply(AppThemeKind.Dark);
+            CheckTabRename(live: true); return;
+        }
         var wslProbe = Array.IndexOf(Environment.GetCommandLineArgs(), "--wsl-path-probe");
         if (wslProbe >= 0) { WslPathProbe.Run(Environment.GetCommandLineArgs()[wslProbe + 1]); return; }
         var wslLaunchProbe = Array.IndexOf(Environment.GetCommandLineArgs(), "--wsl-launch-probe");
@@ -36,9 +42,15 @@ internal static partial class Program
         }
         if (Environment.GetCommandLineArgs().Contains("--conpty-child")) { ConPtyPersianProbe.Child(); return; }
         if (Environment.GetCommandLineArgs().Contains("--conpty-persian")) { ConPtyPersianProbe.Run(); return; }
+        UiText.Select(UiLanguage.English, persist: false);
+        CheckUiLanguages();
+        CheckWindowStatus();
+        CheckProfileChrome();
+        CheckTabRename();
         MacroTests.Run().GetAwaiter().GetResult();
         MacroV2Tests.Run().GetAwaiter().GetResult();
         CheckMacroUi();
+        CheckDirectoryHistory();
         var view = new TerminalView
         {
             Width = 800, Height = 420, FontFamily = new FontFamily("Consolas"),

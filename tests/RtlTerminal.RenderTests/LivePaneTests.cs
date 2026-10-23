@@ -5,13 +5,15 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Threading;
 using RtlTerminal;
+using Microsoft.Win32;
 
 internal static partial class Program
 {
     private static void CheckLivePaneSessions()
     {
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
-        var window = new MainWindow();
+        var historyRegistry = @"Software\RtlTerminal.Tests\PaneHistory-" + Guid.NewGuid().ToString("N");
+        var window = new MainWindow(new DirectoryHistoryStore(historyRegistry));
         var tabs = (IList)typeof(MainWindow).GetField("_tabs", flags)!.GetValue(window)!;
         object? Call(string name, params object?[] args) => typeof(MainWindow).GetMethods(flags | BindingFlags.Static)
             .Single(m => m.Name == name && m.GetParameters().Length == args.Length).Invoke(window,args);
@@ -106,6 +108,7 @@ internal static partial class Program
             Task.WaitAll(sessions.Select(s=>Task.Run(s.Dispose)).ToArray(),TimeSpan.FromSeconds(10));
             window.Close();
             Task.WaitAll(readers.ToArray(),TimeSpan.FromSeconds(10));
+            Registry.CurrentUser.DeleteSubKeyTree(historyRegistry, false);
         }
     }
 }

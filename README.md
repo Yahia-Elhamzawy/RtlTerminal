@@ -1,9 +1,9 @@
-﻿<div align="center">
+<div align="center">
   <img src="RtlTerminal.png" width="112" height="112" alt="Rtl Terminal logo">
-  <h1>Rtl Terminal</h1>
-  <p>A Windows terminal built for Persian, Arabic and mixed-direction text.</p>
-  <p>ترمینال ویندوز برای فارسی، عربی و متن‌های ترکیبی راست‌به‌چپ و چپ‌به‌راست</p>
-  <p>طرفية لويندوز تدعم العربية والفارسية والنصوص المختلطة الاتجاه</p>
+  <h1>RtlTerminal (AI Edition)</h1>
+  <p>A Windows terminal built for Persian, Arabic and mixed-direction text, enhanced with an autonomous AI Agent subsystem.</p>
+  <p>ترمینال ویندوز برای فارسی، عربی و متن‌های ترکیبی راست‌به‌چپ و چپ‌به‌راست همراه با دستیار هوشمند خودکار</p>
+  <p>طرفية لويندوز تدعم العربية والفارسية والنصوص المختلطة الاتجاه مع وكيل ذكاء اصطناعي محلي ذاتي</p>
   <p><a href="#english">English</a> · <a href="#فارسی">فارسی</a> · <a href="#العربية">العربية</a></p>
   <p><strong><a href="https://github.com/mirbehnam/RtlTerminal/releases/latest">Download for Windows · دانلود برای ویندوز · تنزيل لويندوز</a></strong></p>
   <p><a href="https://mirbehnam.github.io/RtlTerminal/">Website</a> · <a href="https://github.com/mirbehnam/RtlTerminal/issues">Report an issue</a> · <a href="LICENSE">GPLv3</a></p>
@@ -12,7 +12,11 @@
 
 ## English
 
-**Rtl Terminal** is an open-source terminal emulator for Windows by **behnamapps**. It brings readable Persian and Arabic text to PowerShell, Command Prompt and WSL, with Smart RTL handling mixed text, numbers and punctuation alongside terminal colors and interactive applications.
+**RtlTerminal (AI Edition)** is an open-source terminal emulator for Windows.
+- **Original creator & core RTL engine:** **Behnam Tajadini** ([behnamapps](https://github.com/mirbehnam))
+- **Modern enhancements & AI Agent Edition:** **Yahia Elhamzawy**
+
+It brings readable Persian and Arabic text to PowerShell, Command Prompt, Git Bash and WSL, with Smart RTL handling mixed text, numbers and punctuation alongside terminal colors, modern shell integrations, and an autonomous AI agent workflow.
 
 ### Install
 
@@ -25,6 +29,7 @@ Download `RtlTerminal-Setup-…-x64.exe` from the [latest release](https://githu
 ### Features
 
 - **Readable mixed text.** Smart RTL displays Persian, Arabic and English together, with word wrapping and ANSI, 256-color and true-color support.
+- **Autonomous AI Agent.** In-terminal AI assistant (`/ai`) supporting Google Gemini, Groq, OpenRouter, NVIDIA NIM, and OpenAI with encrypted DPAPI credential storage and safe step-by-step shell execution.
 - **Tabs and split panes.** Run PowerShell, Command Prompt and installed WSL distributions; split the active pane, combine tabs, rename them and assign tab colors.
 - **Terminal macros.** Record commands and interactive keys, edit steps and replay with pause, resume or single-step controls. Files are encrypted, with optional password protection and sensitive inputs requested at runtime.
 - **Directory history.** See the active pane's folder, open it in Explorer and revisit recent locations. The menu shows 20 directories; searchable history holds up to 200 and can be cleared or disabled.
@@ -51,6 +56,18 @@ Open **Edit → Settings** for fonts, themes, history and macro preferences. **H
 
 With no text selected, `Ctrl+C` interrupts the running command. Pane shortcuts can be disabled in Settings.
 
+### AI Agent Commands
+
+| Command | Action |
+| --- | --- |
+| `/ai <task>` | Start autonomous AI agent on the specified task |
+| `/ai-new` | Reset AI agent session history |
+| `/ai-setup` | Run interactive provider & API key setup wizard |
+| `/ai-model` | View or switch active AI model |
+| `/ai-auto` | Toggle autonomous command execution mode |
+| `/ai-status` | Display current provider, model and session status |
+| `/ai-stop` | Abort running AI agent loop |
+
 ### Guides and support
 
 [Macros](docs/macros.md) · [Directory history](docs/directory-history.md) · [WSL](docs/wsl-behavior.md) · [Interface languages](docs/ui-language.md)
@@ -59,7 +76,11 @@ For rendering issues, include your Windows version, shell, command, expected res
 
 ## فارسی
 
-**Rtl Terminal** ترمینالی متن‌باز برای ویندوز از **behnamapps** است که خواندن متن فارسی و عربی را در PowerShell، Command Prompt و WSL آسان‌تر می‌کند. قابلیت Smart RTL نمایش متن‌های ترکیبی، اعداد و نشانه‌ها را در کنار رنگ‌ها و برنامه‌های تعاملی ترمینال مدیریت می‌کند.
+**RtlTerminal (AI Edition)** ترمینالی متن‌باز برای ویندوز است.
+- **سازنده اصلی و موتور RTL:** **بهنام تاج‌الدینی** ([behnamapps](https://github.com/mirbehnam))
+- **توسعه مدرن و نسخه هوش مصنوعی:** **یحیی الحمزاوى (Yahia Elhamzawy)**
+
+این برنامه خواندن متن فارسی و عربی را در PowerShell، Command Prompt، Git Bash و WSL به همراه دستیار هوش مصنوعی آسان‌تر می‌کند. قابلیت Smart RTL نمایش متن‌های ترکیبی، اعداد و نشانه‌ها را در کنار رنگ‌ها و برنامه‌های تعاملی ترمینال مدیریت می‌کند.
 
 ### نصب
 
@@ -72,6 +93,7 @@ For rendering issues, include your Windows version, shell, command, expected res
 ### قابلیت‌ها
 
 - **نمایش خوانای متن ترکیبی:** پشتیبانی از فارسی، عربی و انگلیسی در کنار هم، انتقال کلمات به خط بعد و رنگ‌های ANSI، پالت ۲۵۶‌رنگ و True Color.
+- **دستیار هوشمند خودکار:** پشتیبانی از هوش مصنوعی درون ترمینال با Google Gemini، Groq، OpenRouter، NVIDIA NIM و OpenAI.
 - **تب‌ها و پنل‌های مجزا:** اجرای PowerShell، Command Prompt و توزیع‌های نصب‌شدهٔ WSL، تقسیم پنل فعال، ترکیب تب‌ها، تغییر نام و رنگ تب.
 - **ماکروهای ترمینال:** ضبط فرمان‌ها و کلیدهای تعاملی، ویرایش مراحل و اجرای مجدد با امکان مکث، ادامه و اجرای گام‌به‌گام. فایل‌ها رمزگذاری می‌شوند و می‌توان برایشان رمز مستقل تعیین کرد یا ورودی‌های حساس را هنگام اجرا پرسید.
 - **تاریخچهٔ پوشه‌ها:** نمایش پوشهٔ پنل فعال، بازکردن آن در اکسپلورر و بازگشت به مسیرهای اخیر. منو ۲۰ مسیر و پنجرهٔ جست‌وجو تا ۲۰۰ مسیر را نمایش می‌دهد؛ تاریخچه قابل پاک‌کردن و غیرفعال‌کردن است.
@@ -106,7 +128,11 @@ For rendering issues, include your Windows version, shell, command, expected res
 
 ## العربية
 
-**Rtl Terminal** هو محاكي طرفية مفتوح المصدر لنظام Windows من **behnamapps**، يساعد على قراءة العربية والفارسية في PowerShell وCommand Prompt وWSL. تتولى ميزة Smart RTL عرض النصوص المختلطة والأرقام وعلامات الترقيم، إلى جانب ألوان الطرفية والتطبيقات التفاعلية.
+**RtlTerminal (AI Edition)** هو محاكي طرفية مفتوح المصدر لنظام Windows.
+- **المطور الأصلي ومحرك RTL الأساسي:** **بهنام تاج‌الديني (Behnam Tajadini)** ([behnamapps](https://github.com/mirbehnam))
+- **التحسينات الحديثة وإصدار وكيل الذكاء الاصطناعي:** **يحيى الحمزاوى (Yahia Elhamzawy)**
+
+يساعد على قراءة العربية والفارسية في PowerShell وCommand Prompt وGit Bash وWSL مع دعم ذكي للنصوص المختلطة ومساعد ذكاء اصطناعي تفاعلي ذاتي. تتولى ميزة Smart RTL عرض النصوص المختلطة والأرقام وعلامات الترقيم، إلى جانب ألوان الطرفية والتطبيقات التفاعلية.
 
 ### التثبيت
 
@@ -119,6 +145,7 @@ For rendering issues, include your Windows version, shell, command, expected res
 ### المميزات
 
 - **نصوص مختلطة واضحة:** العربية والفارسية والإنجليزية مع التفاف الكلمات ودعم ألوان ANSI و256 لوناً والألوان الحقيقية.
+- **وكيل ذكاء اصطناعي محلي ذاتي:** دعم تفاعلي مباشر للأمر `/ai` مع مشغلي Google Gemini وGroq وOpenRouter وNVIDIA NIM وOpenAI وتشفير كامل للمفاتيح عبر DPAPI.
 - **علامات تبويب وأجزاء مستقلة:** تشغيل PowerShell وCommand Prompt وتوزيعات WSL المثبّتة، مع تقسيم الجزء النشط ودمج العلامات وتغيير أسمائها وألوانها.
 - **ماكرو الطرفية:** تسجيل الأوامر والمفاتيح التفاعلية، وتحرير الخطوات وإعادة تشغيلها مع الإيقاف المؤقت والمتابعة والتنفيذ خطوة بخطوة. تُشفّر الملفات مع كلمة مرور اختيارية وإمكانية طلب المدخلات الحساسة أثناء التشغيل.
 - **سجل المجلدات:** عرض مجلد الجزء النشط وفتحه في المستكشف والعودة إلى المجلدات الأخيرة. تعرض القائمة 20 موقعاً، وتتيح نافذة البحث الوصول إلى 200 موقع مع مسح السجل أو تعطيله.
@@ -170,6 +197,13 @@ To create a self-contained build, run `./scripts/build-release.ps1`. With **Inno
 
 Bug reports, translations and pull requests are welcome.
 
+## Credits & Authors
+
+- **Original Creator & Core RTL Engine:** Behnam Tajadini ([behnamapps](https://github.com/mirbehnam))
+- **Modern Enhancements & AI Agent Edition:** Yahia Elhamzawy
+
 ## License
 
-Created by **Behnam Tajadini · behnamapps**. Licensed under the [GNU General Public License v3](LICENSE).
+Original work Copyright (c) Behnam Tajadini · behnamapps.
+Enhanced & AI Edition by Yahia Elhamzawy.
+Licensed under the [GNU General Public License v3](LICENSE).

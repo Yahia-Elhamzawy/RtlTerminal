@@ -379,6 +379,13 @@ ApplySavedFontSettings();
             return;
         }
 
+        if (controlPressed && key == Key.I)
+        {
+            ToggleAiPromptBar();
+            e.Handled = true;
+            return;
+        }
+
         if (key == Key.Escape && SearchBar.Visibility == Visibility.Visible)
         {
             CloseSearchBar();
@@ -663,6 +670,12 @@ ApplySavedFontSettings();
         object sender,
         TextCompositionEventArgs e)
     {
+        if (HandleAiTextInput(e))
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (ActiveSession is null || string.IsNullOrEmpty(e.Text))
             return;
 
@@ -1147,8 +1160,12 @@ ApplySavedFontSettings();
     {
         UiText.Show(
             this,
-            "Rtl Terminal\nby behnamapps\n\n" + UiText.Get("Developer") + ": behnam tajadini\nYouTube: aka_techno\n\n" + UiText.Get("Dedicated to all Persian speakers"),
-            "About Rtl Terminal",
+            $"{AppVersion.ProductName}\nv{AppVersion.Display}\n\n" +
+            "Original creator & core RTL engine: " + AppVersion.OriginalCreator + " (behnamapps)\n" +
+            "Modern enhancements & AI Agent Edition: " + AppVersion.EnhancedBy + "\n" +
+            "YouTube: aka_techno\n\n" +
+            UiText.Get("Dedicated to all Persian speakers"),
+            "About " + AppVersion.ProductName,
             MessageBoxButton.OK,
             MessageBoxImage.Information);
     }
@@ -1315,15 +1332,15 @@ ApplySavedFontSettings();
             TerminalProfile.PowerShell7 =>
                 ShellPath.WindowsArgument(pwshPath) +
                 """
-                 -NoLogo -NoExit -Command "$lines=@('RtlTerminal v{APP_VERSION}','','Author : Behnam Tajadini','Source : github.com/mirbehnam/RtlTerminal','YouTube: @aka_techno',''); $lines | ForEach-Object { Write-Host $_ }"
+                 -NoLogo -NoExit -Command "$lines=@('RtlTerminal (AI Edition) v{APP_VERSION}','','Created by: Behnam Tajadini','Enhanced & AI by: Yahia Elhamzawy','Source : github.com/mirbehnam/RtlTerminal','YouTube: @aka_techno',''); $lines | ForEach-Object { Write-Host $_ }"
                 """,
             TerminalProfile.PowerShell =>
                 """
-                C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoLogo -NoExit -Command "$lines=@('RtlTerminal v{APP_VERSION}','','Author : Behnam Tajadini','Source : github.com/mirbehnam/RtlTerminal','YouTube: @aka_techno',''); $lines | ForEach-Object { Write-Host $_ }"
+                C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoLogo -NoExit -Command "$lines=@('RtlTerminal (AI Edition) v{APP_VERSION}','','Created by: Behnam Tajadini','Enhanced & AI by: Yahia Elhamzawy','Source : github.com/mirbehnam/RtlTerminal','YouTube: @aka_techno',''); $lines | ForEach-Object { Write-Host $_ }"
                 """,
             _ =>
                 """
-                C:\Windows\System32\cmd.exe /D /Q /V:OFF /K "chcp 65001>nul & echo RtlTerminal v{APP_VERSION}& echo.& echo Author : Behnam Tajadini& echo Source : github.com/mirbehnam/RtlTerminal& echo YouTube: @aka_techno& echo."
+                C:\Windows\System32\cmd.exe /D /Q /V:OFF /K "chcp 65001>nul & echo RtlTerminal (AI Edition) v{APP_VERSION}& echo.& echo Created by: Behnam Tajadini& echo Enhanced ^& AI by: Yahia Elhamzawy& echo Source : github.com/mirbehnam/RtlTerminal& echo YouTube: @aka_techno& echo."
                 """
         }).Replace("{APP_VERSION}", AppVersion.Display);
         if (showIntroduction)
@@ -1940,6 +1957,12 @@ ApplySavedFontSettings();
         if (ActiveSession is null)
             return;
 
+        if (HandleAiKeyDown(e))
+        {
+            e.Handled = true;
+            return;
+        }
+
         var controlPressed = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
         var shiftPressed = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
 
@@ -2188,6 +2211,7 @@ ApplySavedFontSettings();
 
     private void WritePanePaste(TerminalPane pane, string text)
     {
+        if (HandleAiPaste(pane, text)) return;
         if (pane.Session is not { } session || string.IsNullOrEmpty(text)) return;
         SendUserInput(pane, pane.LastRenderedSnapshot?.Modes.BracketedPaste == true ? $"\x1b[200~{text}\x1b[201~" : text);
     }

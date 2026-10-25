@@ -20,6 +20,7 @@ public partial class MainWindow
         if (_macroRecorder is not null) SetMacroStatus(UiText.Format("● Recording · pane {0}", _macroPane?.Number));
         if (_updateCheckInProgress) CheckForUpdatesMenuItem.SetCurrentValue(MenuItem.HeaderProperty, UiText.Get("Checking for updates..."));
         if (ActiveDirectoryButton is not null) RefreshActiveDirectory();
+        if (SearchBar is not null && SearchBar.Visibility == Visibility.Visible) UpdateSearch(preserveCurrent: true);
     }
     private void Language_Click(object sender, RoutedEventArgs e)
     {

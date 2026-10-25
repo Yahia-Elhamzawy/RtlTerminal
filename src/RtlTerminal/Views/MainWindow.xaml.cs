@@ -339,14 +339,86 @@ ApplySavedFontSettings();
     {
         if (HandleTabRenameKey(e)) return;
         if (HandleMacroKey(e)) { e.Handled = true; return; }
-        var controlPressed = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
-        var shiftPressed = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
 
-        if (controlPressed && shiftPressed && e.Key == Key.T)
+        if (e.Key == Key.F11)
         {
-            CreateTerminalTab(_defaultProfile);
+            ToggleFullScreen();
             e.Handled = true;
             return;
+        }
+
+        var controlPressed = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+        var shiftPressed = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+        var key = GetEffectiveKey(e);
+
+        if (controlPressed && (key == Key.OemPlus || key == Key.Add))
+        {
+            ZoomFontSize(1);
+            e.Handled = true;
+            return;
+        }
+
+        if (controlPressed && (key == Key.OemMinus || key == Key.Subtract))
+        {
+            ZoomFontSize(-1);
+            e.Handled = true;
+            return;
+        }
+
+        if (controlPressed && (key == Key.D0 || key == Key.NumPad0))
+        {
+            ResetFontSize();
+            e.Handled = true;
+            return;
+        }
+
+        if (controlPressed && key == Key.F)
+        {
+            OpenSearchBar();
+            e.Handled = true;
+            return;
+        }
+
+        if (key == Key.Escape && SearchBar.Visibility == Visibility.Visible)
+        {
+            CloseSearchBar();
+            e.Handled = true;
+            return;
+        }
+
+        if (controlPressed && shiftPressed)
+        {
+            if (e.Key == Key.T)
+            {
+                CreateTerminalTab(_defaultProfile);
+                e.Handled = true;
+                return;
+            }
+
+            int? profileIndex = e.Key switch
+            {
+                Key.D1 or Key.NumPad1 => 0,
+                Key.D2 or Key.NumPad2 => 1,
+                Key.D3 or Key.NumPad3 => 2,
+                Key.D4 or Key.NumPad4 => 3,
+                Key.D5 or Key.NumPad5 => 4,
+                Key.D6 or Key.NumPad6 => 5,
+                Key.D7 or Key.NumPad7 => 6,
+                Key.D8 or Key.NumPad8 => 7,
+                _ => null
+            };
+
+            if (profileIndex is { } index)
+            {
+                var available = GetAvailableProfiles();
+                if (index < available.Count)
+                {
+                    var target = available[index];
+                    CreateTerminalTab(target.Profile, wslDistribution: target.WslDistribution);
+                    e.Handled = true;
+                    return;
+                }
+            }
         }
 
         if (controlPressed && e.Key == Key.Tab)
@@ -384,15 +456,35 @@ ApplySavedFontSettings();
         menu.IsOpen = true;
     }
 
+    private readonly record struct ShellMenuItem(string Header, TerminalProfile Profile, string? WslDistribution = null);
+
+    private List<ShellMenuItem> GetAvailableProfiles()
+    {
+        var profiles = new List<ShellMenuItem>();
+        if (ShellProfiles.IsPowerShell7Available)
+            profiles.Add(new("PowerShell 7", TerminalProfile.PowerShell7));
+        profiles.Add(new("Windows PowerShell", TerminalProfile.PowerShell));
+        profiles.Add(new("Command Prompt", TerminalProfile.CommandPrompt));
+        if (ShellProfiles.IsGitBashAvailable)
+            profiles.Add(new("Git Bash", TerminalProfile.GitBash));
+        if (IsWslAvailable())
+        {
+            foreach (var distribution in WslProfiles.Discover())
+                profiles.Add(new(distribution, TerminalProfile.Wsl, distribution));
+        }
+        return profiles;
+    }
+
     private ContextMenu CreateProfileMenu()
     {
         var menu = new ContextMenu { Style = (Style)FindResource("DarkContextMenuStyle") };
-        AddProfileMenuItem(menu, "Command Prompt", TerminalProfile.CommandPrompt);
-        AddProfileMenuItem(menu, "PowerShell", TerminalProfile.PowerShell);
-
-        if (IsWslAvailable())
-            foreach (var distribution in WslProfiles.Discover())
-                AddProfileMenuItem(menu, distribution, TerminalProfile.Wsl, distribution);
+        var profiles = GetAvailableProfiles();
+        for (var i = 0; i < profiles.Count; i++)
+        {
+            var p = profiles[i];
+            var shortcutNumber = i < 8 ? i + 1 : (int?)null;
+            AddProfileMenuItem(menu, p.Header, p.Profile, shortcutNumber, p.WslDistribution);
+        }
         return menu;
     }
 
@@ -400,9 +492,15 @@ ApplySavedFontSettings();
         ItemsControl menu,
         string header,
         TerminalProfile profile,
+        int? shortcutNumber = null,
         string? wslDistribution = null)
     {
-        var item = new MenuItem { Header = new TextBlock { Text = header }, Icon = CreateProfileIcon(profile) };
+        var item = new MenuItem
+        {
+            Header = new TextBlock { Text = header },
+            Icon = CreateProfileIcon(profile),
+            InputGestureText = shortcutNumber.HasValue ? $"Ctrl+Shift+{shortcutNumber.Value}" : string.Empty
+        };
         item.Click += (_, _) => SelectTerminalProfile(profile, wslDistribution);
         menu.Items.Add(item);
     }
@@ -423,6 +521,11 @@ ApplySavedFontSettings();
 
     private void MaximizeButton_Click(object sender, RoutedEventArgs e)
     {
+        if (_isFullScreen)
+        {
+            ToggleFullScreen();
+            return;
+        }
         WindowState = WindowState == WindowState.Maximized
             ? WindowState.Normal
             : WindowState.Maximized;
@@ -1184,7 +1287,9 @@ ApplySavedFontSettings();
     private static string GetProfileTitle(TerminalProfile profile) =>
         profile switch
         {
+            TerminalProfile.PowerShell7 => "PowerShell 7",
             TerminalProfile.PowerShell => "PowerShell",
+            TerminalProfile.GitBash => "Git Bash",
             TerminalProfile.Wsl => "WSL",
             _ => "Command Prompt"
         };
@@ -1192,14 +1297,26 @@ ApplySavedFontSettings();
     private static string GetProfileCommand(TerminalProfile profile, bool showIntroduction = true, string? wslDistribution = null, string? wslDirectory = null)
     {
         if (profile == TerminalProfile.Wsl) return WslProfiles.CommandLine(wslDistribution, wslDirectory);
+        if (profile == TerminalProfile.GitBash)
+        {
+            var bashPath = ShellProfiles.GitBashPath ?? "bash.exe";
+            return ShellPath.WindowsArgument(bashPath) + " --login -i";
+        }
         const string powerShellDirectoryPrompt = "$global:__RtlOriginalPrompt=$function:prompt; function global:prompt { [Console]::Write(([char]27).ToString()+']9;9;'+$executionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath+[char]7); & $global:__RtlOriginalPrompt }; ";
+        var pwshPath = ShellProfiles.PowerShell7Path ?? "pwsh.exe";
         var command =
         !showIntroduction ? profile switch
         {
+            TerminalProfile.PowerShell7 => ShellPath.WindowsArgument(pwshPath) + @" -NoLogo -NoExit -Command """ + powerShellDirectoryPrompt + "\"",
             TerminalProfile.PowerShell => @"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoLogo -NoExit -Command """ + powerShellDirectoryPrompt + "\"",
             _ => @"C:\Windows\System32\cmd.exe /D /Q /V:OFF /K ""chcp 65001>nul"""
         } : (profile switch
         {
+            TerminalProfile.PowerShell7 =>
+                ShellPath.WindowsArgument(pwshPath) +
+                """
+                 -NoLogo -NoExit -Command "$lines=@('RtlTerminal v{APP_VERSION}','','Author : Behnam Tajadini','Source : github.com/mirbehnam/RtlTerminal','YouTube: @aka_techno',''); $lines | ForEach-Object { Write-Host $_ }"
+                """,
             TerminalProfile.PowerShell =>
                 """
                 C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoLogo -NoExit -Command "$lines=@('RtlTerminal v{APP_VERSION}','','Author : Behnam Tajadini','Source : github.com/mirbehnam/RtlTerminal','YouTube: @aka_techno',''); $lines | ForEach-Object { Write-Host $_ }"
@@ -1211,20 +1328,27 @@ ApplySavedFontSettings();
         }).Replace("{APP_VERSION}", AppVersion.Display);
         if (showIntroduction)
             command = command.Replace("YouTube: @aka_techno", StartupSocialLine(Random.Shared.Next(2) == 0));
-        if (profile == TerminalProfile.PowerShell && showIntroduction)
+        if ((profile == TerminalProfile.PowerShell || profile == TerminalProfile.PowerShell7) && showIntroduction)
             command = command.Replace("-Command \"", "-Command \"" + powerShellDirectoryPrompt);
         return command;
     }
 
     private static bool IsWslAvailable() => WslProfiles.IsAvailable;
+    private static bool IsPowerShell7Available() => ShellProfiles.IsPowerShell7Available;
+    private static bool IsGitBashAvailable() => ShellProfiles.IsGitBashAvailable;
 
     private static TerminalProfile LoadDefaultProfile()
     {
         var savedProfile = AppSettings.LoadTerminalProfile();
 
+        if (string.Equals(savedProfile, "PowerShellCore", StringComparison.OrdinalIgnoreCase))
+            savedProfile = nameof(TerminalProfile.PowerShell7);
+
         if (!Enum.TryParse(savedProfile, out TerminalProfile profile) ||
             !Enum.IsDefined(profile) ||
-            profile == TerminalProfile.Wsl && !IsWslAvailable())
+            profile == TerminalProfile.Wsl && !IsWslAvailable() ||
+            profile == TerminalProfile.PowerShell7 && !IsPowerShell7Available() ||
+            profile == TerminalProfile.GitBash && !IsGitBashAvailable())
         {
             return TerminalProfile.CommandPrompt;
         }
@@ -1285,6 +1409,9 @@ ApplySavedFontSettings();
 
     private void ShowTab(TerminalTab tab)
     {
+        CloseSearchBar();
+        _searchMatches.Clear();
+        _currentSearchIndex = -1;
         if (_renamingTab is not null && !ReferenceEquals(_renamingTab, tab)) FinishTabRename(true, false, false);
         StorePaneSizes();
         _activeTab = tab;
@@ -2051,7 +2178,9 @@ ApplySavedFontSettings();
             var fullPath = Path.GetFullPath(path);
             formatted.Add(pane.Profile == TerminalProfile.Wsl
                 ? WslPath.Quote(await WslPathResolver.ConvertAsync(fullPath, pane.WslDistribution))
-                : ShellPath.Windows(fullPath, pane.Profile == TerminalProfile.PowerShell, escapePercent: pane.LastRenderedSnapshot?.Modes.BracketedPaste != true));
+                : pane.Profile == TerminalProfile.GitBash
+                    ? WslPath.Quote(fullPath)
+                    : ShellPath.Windows(fullPath, pane.Profile == TerminalProfile.PowerShell || pane.Profile == TerminalProfile.PowerShell7, escapePercent: pane.LastRenderedSnapshot?.Modes.BracketedPaste != true));
         }
         // Conversion is atomic: no partial paste if any file cannot be resolved.
         WritePanePaste(pane, string.Join(" ", formatted));
@@ -2349,7 +2478,9 @@ ApplySavedFontSettings();
     {
         CommandPrompt,
         PowerShell,
-        Wsl
+        Wsl,
+        PowerShell7,
+        GitBash
     }
 
     private enum PaneSplitDirection { None, SideBySide, Stacked }

@@ -12,8 +12,14 @@ public partial class FontSettingsWindow : Window
 {
     private static readonly string[] RecommendedFontNames =
     [
-        "Cascadia Mono",
         "Cascadia Code",
+        "Cascadia Mono",
+        "Simplified Arabic Fixed",
+        "Segoe UI Variable Text",
+        "Amiri Typewriter",
+        "Amiri",
+        "Cairo",
+        "Almarai",
         "Consolas",
         "Lucida Console",
         "Courier New",
@@ -296,7 +302,7 @@ public partial class FontSettingsWindow : Window
         return _fontFamilies.FirstOrDefault(name =>
             string.Equals(
                 name,
-                "Cascadia Mono",
+                "Cascadia Code",
                 StringComparison.CurrentCultureIgnoreCase)) ??
             _fontFamilies.FirstOrDefault(name =>
                 string.Equals(

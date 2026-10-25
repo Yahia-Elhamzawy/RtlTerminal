@@ -51,6 +51,7 @@ internal static partial class Program
         MacroV2Tests.Run().GetAwaiter().GetResult();
         CheckMacroUi();
         CheckDirectoryHistory();
+        CheckTerminalSearchAndZoom();
         var view = new TerminalView
         {
             Width = 800, Height = 420, FontFamily = new FontFamily("Consolas"),
@@ -117,6 +118,7 @@ internal static partial class Program
         CheckSchemesAcrossPanes();
         CheckThemeSettingsPreview();
         CheckWslProfiles();
+        CheckShellProfiles();
         CheckExplorerDirectories();
         CheckLivePaneSessions();
         Render(new TerminalView { Width = 800, Height = 420, FontFamily = new FontFamily("Consolas"), FontSize = 18, Background = Brushes.Black }, ConPtyPersianProbe.Run(), "native-persian.png");

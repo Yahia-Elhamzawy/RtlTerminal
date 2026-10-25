@@ -31,6 +31,7 @@ public sealed class TerminalView : ContentControl
     public double ViewportWidth => _scroll.ViewportWidth;
     public double ViewportHeight => _scroll.ViewportHeight;
     public bool IsUpdatingScroll { get; private set; }
+    public double LineHeight => _lineHeight;
     public ((int Row, int Offset)? Anchor, (int Row, int Offset)? End) SelectionState
     {
         get => (_anchor, _end);

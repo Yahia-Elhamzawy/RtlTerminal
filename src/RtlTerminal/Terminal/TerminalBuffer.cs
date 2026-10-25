@@ -39,6 +39,8 @@ public sealed record TerminalLine(
     int CellLength)
 {
     public bool WrappedFromPrevious { get; init; }
+    private string? _text;
+    public string Text => _text ??= string.Concat(Runs.Select(run => run.Text));
 
     internal bool ContainsRightToLeft =>
         SmartRtl.ContainsRightToLeft(Runs);

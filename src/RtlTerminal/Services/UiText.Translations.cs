@@ -287,5 +287,18 @@ Current directory is not available yet|پوشهٔ فعلی هنوز مشخص ن�
 The current directory is unavailable. Return to the shell prompt and try again.|پوشهٔ فعلی در دسترس نیست. به اعلان شل برگردید و دوباره تلاش کنید.|المجلد الحالي غير متاح. ارجع إلى مطالبة الصدفة وحاول مجدداً.
 Tab name|نام تب|اسم علامة التبويب
 Cancel rename|لغو تغییر نام|إلغاء إعادة التسمية
+Find...|جست‌وجو…|بحث…
+Previous match|تطابق قبلی|المطابقة السابقة
+Next match|تطابق بعدی|المطابقة التالية
+Match case|حساس به حروف بزرگ و کوچک|مطابقة حالة الأحرف
+Close search|بستن جست‌وجو|إغلاق البحث
+{0} of {1}|{0} از {1}|{0} من {1}
+No results|نتیجه‌ای یافت نشد|لا توجد نتائج
+Full screen|تمام‌صفحه|ملء الشاشة
+Zoom in|بزرگ‌نمایی|تكبير
+Zoom out|کوچک‌نمایی|تصغير
+Reset zoom|بازنشانی بزرگ‌نمایی|إعادة تعيين الحجم
+PowerShell 7|پاورشل ۷|PowerShell 7
+Git Bash|گیت بش|Git Bash
 """;
 }
